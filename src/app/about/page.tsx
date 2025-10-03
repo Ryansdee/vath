@@ -47,7 +47,7 @@ export default function AboutPage() {
               </p>
               
               <p>
-                Cr&eacute;ateur visuel passionn&eacute;, je capture l'essence des moments &agrave; travers la photographie, 
+                Cr&eacute;ateur visuel passionn&eacute;, je capture l&apos;essence des moments &agrave; travers la photographie, 
                 la r&eacute;alisation et la vid&eacute;ographie. Chaque projet est une opportunit&eacute; de raconter une 
                 histoire unique et de cr&eacute;er des images qui r&eacute;sonnent avec authenticit&eacute; et &eacute;motion.
               </p>
@@ -117,7 +117,7 @@ export default function AboutPage() {
             
             <div className="flex flex-col items-center gap-6">
               <p className="text-zinc-400 text-base md:text-lg text-center max-w-2xl">
-                Pour toute demande de collaboration, n'h&eacute;sitez pas &agrave; me contacter par email ou &agrave; consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
+                Pour toute demande de collaboration, n&apos;h&eacute;sitez pas &agrave; me contacter par email ou &agrave; consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
               </p>
 
               {/* Boutons */}

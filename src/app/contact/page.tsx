@@ -169,7 +169,7 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 className="group relative inline-flex items-center justify-center gap-3 bg-transparent border-2 border-white text-white px-6 py-3 font-black uppercase tracking-wider text-sm transition-all duration-300 hover:bg-white hover:text-black"
               >
-                <span>Main d'Oeuvre</span>
+                <span>Main d&apos;Oeuvre</span>
                 <span className="text-base">→</span>
               </a>
             </div>

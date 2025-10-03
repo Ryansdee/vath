@@ -36,7 +36,7 @@ export default function Footer() {
                   <span className="text-zinc-500 group-hover:text-white text-lg font-bold transition-colors duration-300">IG</span>
                 </div>
                 <span className="text-zinc-500 group-hover:text-white uppercase text-sm font-medium tracking-wider transition-colors duration-300">
-                  Instagram 1
+                  Vath
                 </span>
               </div>
               {/* Ligne de soulignement */}
@@ -58,7 +58,7 @@ export default function Footer() {
                   <span className="text-zinc-500 group-hover:text-white text-lg font-bold transition-colors duration-300">IG</span>
                 </div>
                 <span className="text-zinc-500 group-hover:text-white uppercase text-sm font-medium tracking-wider transition-colors duration-300">
-                  Instagram 2
+                  Main d&apos;Oeuvre
                 </span>
               </div>
               {/* Ligne de soulignement */}

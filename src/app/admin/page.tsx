@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, db } from "../../../lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
+import Image from "next/image";
 
 export default function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -174,7 +175,7 @@ export default function AdminPage() {
                 disabled={uploading}
               />
               <p className="text-zinc-600 text-xs mt-2 uppercase tracking-wider">
-                S&eacute;parez par des virgules
+                Séparez par des virgules
               </p>
             </label>
           </div>
