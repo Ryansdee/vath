@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="icon" href="/logo.jpg" sizes="any" />
         <link rel="icon" href="/logo.jpg" type="image/png" />
       </head>
-      <body className="bg-white text-gray-900">
+      <body className="bg-white text-gray-900 w-full">
         <Navbar />
         <main className="min-h-screen container mx-auto px-4">{children}</main>
         <Footer />
