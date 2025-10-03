@@ -174,7 +174,7 @@ export default function AdminPage() {
                 disabled={uploading}
               />
               <p className="text-zinc-600 text-xs mt-2 uppercase tracking-wider">
-                Séparez par des virgules
+                S&eacute;parez par des virgules
               </p>
             </label>
           </div>

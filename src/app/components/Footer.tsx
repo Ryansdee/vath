@@ -18,7 +18,7 @@ export default function Footer() {
               </span>
             </p>
             <p className="text-zinc-500 text-xs uppercase tracking-wider">
-              &copy; {new Date().getFullYear()} Tous droits réservés
+              &copy; {new Date().getFullYear()} Tous droits r&eacute;serv&eacute;s
             </p>
           </div>
           

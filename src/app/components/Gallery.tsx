@@ -171,7 +171,7 @@ export default function Gallery() {
               <span className="text-2xl md:text-3xl text-zinc-700 font-black">∅</span>
             </div>
             <p className="text-zinc-600 text-sm md:text-base uppercase tracking-wider text-center px-4">
-              Aucune photo trouvée
+              Aucune photo trouv&eacute;e
             </p>
             <div className="flex items-center gap-3 md:gap-4 mt-8 md:mt-12">
               <div className="h-px w-8 md:w-12 bg-zinc-800"></div>

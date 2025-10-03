@@ -12,9 +12,9 @@ export default function AboutPage() {
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-center text-white mb-4 md:mb-6">
             <span className="relative inline-block">
-              <span className="relative z-10">À propos</span>
+              <span className="relative z-10">&agrave; propos</span>
               <span className="absolute top-1 left-1 md:top-1.5 md:left-1.5 text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter text-zinc-800 -z-10">
-                À propos
+                &agrave; propos
               </span>
             </span>
           </h1>
@@ -47,14 +47,14 @@ export default function AboutPage() {
               </p>
               
               <p>
-                Créateur visuel passionné, je capture l'essence des moments à travers la photographie, 
-                la réalisation et la vidéographie. Chaque projet est une opportunité de raconter une 
-                histoire unique et de créer des images qui résonnent avec authenticité et émotion.
+                Cr&eacute;ateur visuel passionn&eacute;, je capture l'essence des moments &agrave; travers la photographie, 
+                la r&eacute;alisation et la vid&eacute;ographie. Chaque projet est une opportunit&eacute; de raconter une 
+                histoire unique et de cr&eacute;er des images qui r&eacute;sonnent avec authenticit&eacute; et &eacute;motion.
               </p>
               
               <p>
-                Mon approche allie technique professionnelle et sensibilité artistique pour transformer 
-                vos visions en contenus visuels percutants et mémorables.
+                Mon approche allie technique professionnelle et sensibilit&eacute; artistique pour transformer 
+                vos visions en contenus visuels percutants et m&eacute;morables.
               </p>
             </div>
 
@@ -79,7 +79,7 @@ export default function AboutPage() {
                 <div>
                   <h3 className="text-white font-bold text-base md:text-lg mb-1">Photographie</h3>
                   <p className="text-zinc-500 text-sm md:text-base">
-                    Portraits, événements, produits et projets créatifs sur mesure
+                    Portraits, &eacute;v&eacute;nements, produits et projets cr&eacute;atifs sur mesure
                   </p>
                 </div>
               </div>
@@ -87,7 +87,7 @@ export default function AboutPage() {
               <div className="flex items-start gap-4">
                 <div className="w-2 h-2 bg-white mt-2 flex-shrink-0"></div>
                 <div>
-                  <h3 className="text-white font-bold text-base md:text-lg mb-1">Réalisation</h3>
+                  <h3 className="text-white font-bold text-base md:text-lg mb-1">R&eacute;alisation</h3>
                   <p className="text-zinc-500 text-sm md:text-base">
                     Direction artistique et conception visuelle de projets audiovisuels
                   </p>
@@ -97,9 +97,9 @@ export default function AboutPage() {
               <div className="flex items-start gap-4">
                 <div className="w-2 h-2 bg-white mt-2 flex-shrink-0"></div>
                 <div>
-                  <h3 className="text-white font-bold text-base md:text-lg mb-1">Vidéographie</h3>
+                  <h3 className="text-white font-bold text-base md:text-lg mb-1">Vid&eacute;ographie</h3>
                   <p className="text-zinc-500 text-sm md:text-base">
-                    Production vidéo, montage et post-production professionnelle
+                    Production vid&eacute;o, montage et post-production professionnelle
                   </p>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default function AboutPage() {
             
             <div className="flex flex-col items-center gap-6">
               <p className="text-zinc-400 text-base md:text-lg text-center max-w-2xl">
-                Pour toute demande de collaboration, n'hésitez pas à me contacter par email ou à consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
+                Pour toute demande de collaboration, n'h&eacute;sitez pas &agrave; me contacter par email ou &agrave; consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
               </p>
 
               {/* Boutons */}
