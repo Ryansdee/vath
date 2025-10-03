@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { db } from "../../../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
@@ -77,7 +78,7 @@ export default function VideosPage() {
                   className="group cursor-pointer"
                 >
                   <div className="relative aspect-video bg-black border-4 border-black hover:border-zinc-400 transition-all duration-300 overflow-hidden">
-                    <img
+                    <Image
                       src={video.thumbnail}
                       alt={video.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

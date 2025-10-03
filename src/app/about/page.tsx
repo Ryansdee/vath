@@ -36,7 +36,7 @@ export default function AboutPage() {
               </p>
               
               <p>
-                Créateur visuel passionné, je capture l'essence des moments à travers la photographie, 
+                Créateur visuel passionné, je capture l&apos;essence des moments à travers la photographie, 
                 la réalisation et la vidéographie. Chaque projet est une opportunité de raconter une 
                 histoire unique et de créer des images qui résonnent avec authenticité et émotion.
               </p>
@@ -118,7 +118,7 @@ export default function AboutPage() {
             
             <div className="flex flex-col items-center gap-6">
               <p className="text-zinc-400 text-base md:text-lg text-center max-w-2xl">
-                Pour toute demande de collaboration, n'hésitez pas à me contacter par email ou à consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
+                Pour toute demande de collaboration, n&apos;hésitez pas à me contacter par email ou à consulter <span className="text-white font-bold">@maindoeuvre.productions</span>
               </p>
 
               {/* Boutons */}

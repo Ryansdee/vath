@@ -39,7 +39,7 @@ export default function Footer() {
               <div className="w-7 h-7 border border-zinc-700 hover:border-white flex items-center justify-center transition-colors duration-200">
                 <span className="text-[10px] font-bold">IG</span>
               </div>
-              <span className="text-xs uppercase tracking-wider">Main d'Oeuvre</span>
+              <span className="text-xs uppercase tracking-wider">Main d&apos;Oeuvre</span>
             </a>
           </div>
         </div>
