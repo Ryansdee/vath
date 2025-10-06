@@ -74,8 +74,7 @@ export default function HomePage() {
   }
 
   return (
-    <section className="relative min-h-screen w-full overflow-hidden">
-      {/* Images de background avec transition */}
+    <section className="min-h-screen w-full overflow-hidden">
       <div className="absolute inset-0 z-0">
         {currentImage ? (
           <div className="relative w-full h-full">

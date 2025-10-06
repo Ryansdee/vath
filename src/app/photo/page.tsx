@@ -24,6 +24,8 @@ export default function PhotosPage() {
   const [tagStickers, setTagStickers] = useState<TagSticker[]>([]);
   const [loading, setLoading] = useState(true);
 
+
+
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -100,10 +102,12 @@ export default function PhotosPage() {
                 <Link
                   key={sticker.tag}
                   href={`/photo/${sticker.tag}`}
+                  title={`Voir la collection "${sticker.tag}" (${sticker.count} photos)` }
                   className="group relative aspect-square overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02] will-change-transform"
                   style={{ 
                     animationDelay: `${index * 80}ms`,
                   }}
+                  
                 >
                   {/* Image avec optimisation */}
                   <Image

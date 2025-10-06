@@ -24,11 +24,14 @@ export default function AboutPage() {
             <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-8">
               {/* Image */}
               <div className="flex-shrink-0">
-                <div className="relative w-48 h-48 md:w-56 md:h-56 mx-auto md:mx-0">
+                <div className="relative w-48 h-48 md:w-56 md:h-56 mx-auto md:mx-0 border-rounded">
                   <Image
                     src="/logo.jpg"
                     alt="Vadim Thevelin"
-                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
+                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300 border-rounded"
+                    width={300}
+                    height={300}
+                    style={{ borderRadius: '.5em' }}
                   />
                 </div>
               </div>
@@ -124,7 +127,7 @@ export default function AboutPage() {
           </section>
 
           {/* CTA Section */}
-          <section className="animate-fade-in-up bg-gray-50 -mx-6 px-6 py-16 md:-mx-0 md:px-12" style={{ animationDelay: "200ms" }}>
+          <section className="animate-fade-in-up bg-gray-50 border-rounded -mx-6 px-6 py-16 md:-mx-0 md:px-12" style={{ animationDelay: "200ms" }}>
             <div className="max-w-2xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-black mb-6 tracking-tight">
                 Let&apos;s work together
