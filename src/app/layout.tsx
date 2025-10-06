@@ -5,8 +5,8 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Vath photography",
-  description: "Vath photography portfolio",
+  title: "Vadim Thevelin - Photography Portfolio",
+  description: "Portfolio of Vadim Thevelin, photographer and videographer based in France. Explore stunning visuals and creative projects.",
 
 };
 

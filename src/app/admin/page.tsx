@@ -12,34 +12,47 @@ interface FileWithPreview {
 }
 
 export default function AdminPage() {
+  // --- Protection par code ---
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [inputCode, setInputCode] = useState("");
+  const adminCode = process.env.NEXT_PUBLIC_ADMIN_CODE;
+
+  // --- États du formulaire ---
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // --- Vérification du code ---
+  const handleAccess = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputCode === adminCode) {
+      setAccessGranted(true);
+    } else {
+      alert("Code incorrect ❌");
+    }
+  };
+
+  // --- Upload logic ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
-    
-    selectedFiles.forEach(file => {
+    selectedFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFiles(prev => [...prev, {
-          file,
-          preview: reader.result as string
-        }]);
+        setFiles((prev) => [...prev, { file, preview: reader.result as string }]);
       };
       reader.readAsDataURL(file);
     });
   };
 
   const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
+    setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (files.length === 0) return alert("Choisissez au moins une image");
+    if (files.length === 0) return alert("Choose at least one image");
 
     setUploading(true);
     setUploadProgress(0);
@@ -49,208 +62,240 @@ export default function AdminPage() {
       let uploadedCount = 0;
 
       for (const { file } of files) {
-        // Upload dans Firebase Storage
         const storageRef = ref(storage, `photos/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
+        const metadata = {
+          contentType: file.type,
+          customMetadata: {
+            originalSize: file.size.toString(),
+            uploadDate: new Date().toISOString(),
+          },
+          cacheControl: "public, max-age=31536000",
+        };
+
+        await uploadBytes(storageRef, file, metadata);
         const url = await getDownloadURL(storageRef);
 
-        // Enregistrement dans Firestore
         await addDoc(collection(db, "photos"), {
           url,
           description,
           tags: tags.split(",").map((t) => t.trim()),
           createdAt: new Date(),
+          metadata: {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+          },
         });
 
         uploadedCount++;
         setUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
       }
 
-      alert(`✓ ${totalFiles} image(s) uploadée(s) avec succès !`);
+      alert(`✓ ${totalFiles} image(s) uploaded successfully in high quality!`);
       setFiles([]);
       setDescription("");
       setTags("");
     } catch (err) {
       console.error(err);
-      alert("✗ Erreur lors de l'upload");
+      alert("✗ Upload error");
     } finally {
       setUploading(false);
       setUploadProgress(0);
     }
   };
 
-  return (
-    <section className="min-h-screen bg-black py-8 md:py-12 lg:py-16 px-4 md:px-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 md:mb-12">
-          <div className="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8">
-            <div className="h-px w-8 md:w-16 bg-white opacity-20"></div>
-            <div className="w-2 h-2 border border-white opacity-40"></div>
-            <div className="h-px w-8 md:w-16 bg-white opacity-20"></div>
-          </div>
+  // --- Si le code n’est pas encore validé ---
+  if (!accessGranted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <form
+          onSubmit={handleAccess}
+          className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm text-center"
+        >
+          <h1 className="text-2xl font-bold mb-4 text-gray-900">Admin Access</h1>
+          <input
+            type="password"
+            placeholder="Enter access code"
+            value={inputCode}
+            onChange={(e) => setInputCode(e.target.value)}
+            className="w-full px-4 py-3 border text-gray-900 border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-black"
+          />
+          <button
+            type="submit"
+            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+          >
+            Access
+          </button>
+        </form>
+      </div>
+    );
+  }
 
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tighter text-center text-white mb-3 md:mb-4">
-            <span className="relative inline-block">
-              <span className="relative z-10">Admin</span>
-              <span className="absolute top-1 left-1 md:top-1.5 md:left-1.5 text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter text-zinc-800 -z-10">
-                Admin
-              </span>
-            </span>
+  // --- Page admin complète ---
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="pt-32 pb-16 px-6 border-b border-gray-100">
+        <div className="max-w-4xl mx-auto animate-fade-in text-center">
+          <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
+            Admin
           </h1>
-          
-          <p className="text-center text-zinc-500 text-xs md:text-sm uppercase tracking-wider">
-            Upload de photos multiples
+          <p className="text-gray-500 text-sm">
+            High quality upload • No compression
           </p>
         </div>
+      </header>
 
-        {/* Formulaire */}
-        <form onSubmit={handleUpload} className="space-y-6 md:space-y-8">
-          {/* Upload file avec preview */}
-          <div className="space-y-4">
-            <label className="block">
-              <span className="text-white font-bold uppercase tracking-wider text-sm md:text-base mb-2 block flex items-center gap-2">
-                <span className="w-6 h-6 md:w-8 md:h-8 border-2 border-white flex items-center justify-center text-xs md:text-sm">1</span>
+      {/* Content */}
+      <main className="px-6 py-16">
+        <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleUpload} className="space-y-8">
+            
+            {/* Upload Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Images ({files.length})
-              </span>
+              </label>
               
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                  disabled={uploading}
-                  multiple
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="flex items-center justify-center w-full p-6 md:p-8 border-2 border-dashed border-zinc-700 hover:border-white transition-colors duration-300 cursor-pointer bg-zinc-900 hover:bg-zinc-800"
-                >
-                  <div className="text-center">
-                    <div className="text-3xl md:text-4xl text-zinc-600 mb-2">+</div>
-                    <p className="text-zinc-500 text-xs md:text-sm uppercase tracking-wider">
-                      Choisir des images
-                    </p>
-                    <p className="text-zinc-700 text-[10px] mt-1">
-                      Sélection multiple possible
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                disabled={uploading}
+                multiple
+              />
+              <label
+                htmlFor="file-upload"
+                className="flex flex-col items-center justify-center w-full p-12 border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors cursor-pointer bg-gray-50 hover:bg-gray-100"
+              >
+                <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-gray-600 text-sm mb-1">
+                  Click to upload or drag and drop
+                </p>
+                <p className="text-gray-400 text-xs">
+                  JPG, PNG • Max quality preserved
+                </p>
+              </label>
 
-            {/* Previews Grid */}
-            {files.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {files.map((item, index) => (
-                  <div key={index} className="relative border-2 border-white overflow-hidden group">
-                    <Image 
-                      src={item.preview} 
-                      alt={`Preview ${index + 1}`}
-                      width={300}
-                      height={300}
-                      className="w-full h-32 md:h-40 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-white text-black text-sm font-bold hover:bg-red-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      ×
-                    </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/80 px-2 py-1">
-                      <p className="text-white text-[10px] truncate">{item.file.name}</p>
+              {/* Previews */}
+              {files.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                  {files.map((item, index) => (
+                    <div key={index} className="relative group">
+                      <div className="aspect-square bg-gray-100 overflow-hidden">
+                        <Image 
+                          src={item.preview} 
+                          alt={`Preview ${index + 1}`}
+                          width={300}
+                          height={300}
+                          className="w-full h-full object-cover"
+                          quality={100}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="absolute top-2 right-2 w-6 h-6 bg-black text-white text-sm font-bold hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-600 truncate">{item.file.name}</p>
+                        <p className="text-xs text-gray-400">
+                          {(item.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Description */}
-          <div>
-            <label className="block">
-              <span className="text-white font-bold uppercase tracking-wider text-sm md:text-base mb-2 block flex items-center gap-2">
-                <span className="w-6 h-6 md:w-8 md:h-8 border-2 border-white flex items-center justify-center text-xs md:text-sm">2</span>
-                Description (commune à toutes)
-              </span>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description (optional)
+              </label>
               <input
                 type="text"
-                placeholder="Décrivez vos photos... (facultatif)"
+                placeholder="Describe your photos..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-black border-2 border-zinc-800 p-3 md:p-4 text-white placeholder-zinc-600 focus:border-white focus:outline-none transition-colors text-sm md:text-base"
+                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
                 disabled={uploading}
               />
-            </label>
-          </div>
+            </div>
 
-          {/* Tags */}
-          <div>
-            <label className="block">
-              <span className="text-white font-bold uppercase tracking-wider text-sm md:text-base mb-2 block flex items-center gap-2">
-                <span className="w-6 h-6 md:w-8 md:h-8 border-2 border-white flex items-center justify-center text-xs md:text-sm">3</span>
-                Tags (communs à toutes)
-              </span>
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tags (required)
+              </label>
               <input
                 type="text"
                 placeholder="FWP, DAMSO, portrait..."
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                className="w-full bg-black border-2 border-zinc-800 p-3 md:p-4 text-white placeholder-zinc-600 focus:border-white focus:outline-none transition-colors text-sm md:text-base"
+                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
                 required
                 disabled={uploading}
               />
-              <p className="text-zinc-600 text-xs mt-2 uppercase tracking-wider">
-                Séparez par des virgules
-              </p>
-            </label>
-          </div>
-
-          {/* Progress bar */}
-          {uploading && (
-            <div className="space-y-2">
-              <div className="w-full h-2 bg-zinc-800 overflow-hidden">
-                <div 
-                  className="h-full bg-white transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-              <p className="text-zinc-500 text-xs text-center uppercase tracking-wider">
-                {uploadProgress}% - Upload en cours...
+              <p className="text-gray-500 text-xs mt-2">
+                Separate with commas
               </p>
             </div>
-          )}
 
-          {/* Bouton submit */}
-          <button
-            type="submit"
-            disabled={uploading || files.length === 0}
-            className="relative w-full bg-white text-black py-4 md:py-5 text-sm md:text-base font-black uppercase tracking-wider transition-all duration-300 hover:bg-zinc-200 hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
-          >
-            {uploading ? (
-              <span className="flex items-center justify-center gap-3">
-                <span className="w-5 h-5 border-2 border-black border-t-transparent animate-spin rounded-full"></span>
-                Upload en cours...
-              </span>
-            ) : (
-              `Uploader ${files.length} photo${files.length > 1 ? 's' : ''}`
+            {/* Progress */}
+            {uploading && (
+              <div className="space-y-2">
+                <div className="w-full h-2 bg-gray-200 overflow-hidden">
+                  <div 
+                    className="h-full bg-[#090860] transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-gray-600 text-sm text-center">
+                  {uploadProgress}% - Uploading...
+                </p>
+              </div>
             )}
-            {!uploading && (
-              <span className="absolute top-0 right-0 w-3 h-3 bg-black"></span>
-            )}
-          </button>
-        </form>
 
-        {/* Footer décoratif */}
-        <div className="flex items-center justify-center gap-3 md:gap-4 mt-12 md:mt-16">
-          <div className="h-px w-12 md:w-16 bg-zinc-800"></div>
-          <div className="w-2 h-2 bg-zinc-800"></div>
-          <div className="h-px w-12 md:w-16 bg-zinc-800"></div>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={uploading || files.length === 0}
+              className="w-full bg-black text-white py-4 font-semibold transition-all duration-200 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {uploading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full"></span>
+                  Uploading...
+                </span>
+              ) : (
+                `Upload ${files.length} photo${files.length > 1 ? "s" : ""}`
+              )}
+            </button>
+          </form>
         </div>
-      </div>
-    </section>
+      </main>
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out;
+        }
+      `}</style>
+    </div>
   );
 }

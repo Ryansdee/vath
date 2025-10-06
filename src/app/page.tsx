@@ -1,56 +1,98 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+
+interface Photo {
+  id: string;
+  url: string;
+  description?: string;
+  tags?: string[];
+}
 
 export default function HomePage() {
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Récupérer les images depuis Firestore
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "photos"));
+        const data: Photo[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Photo, "id">),
+        }));
+        
+        const imageUrls = data.map(photo => photo.url);
+        setImages(imageUrls);
+        
+        if (imageUrls.length > 0) {
+          setCurrentImage(imageUrls[Math.floor(Math.random() * imageUrls.length)]);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des images:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
+
+  // Changer l'image toutes les 10 secondes
+  useEffect(() => {
+    if (images.length === 0) return;
+
+    const interval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * images.length);
+      setCurrentImage(images[randomIndex]);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [images]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-6">
+          {/* Loader bleu circulaire */}
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          
+          {/* Texte de chargement */}
+          <p className="text-blue-600 text-sm font-semibold uppercase tracking-wider">
+            Loading...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className="relative min-h-screen w-full overflow-hidden">
-      {/* Image de background */}
+      {/* Images de background avec transition */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/hero-background.jpg"
-          alt="Background"
-          fill
-          className="object-cover"
-          priority
-          quality={90}
-        />
-        {/* Overlay sombre pour la lisibilité */}
-        <div className="absolute inset-0 bg-black/50"></div>
-      </div>
-
-      {/* Contenu */}
-      <div className="relative flex flex-col items-center justify-center min-h-screen px-4 md:px-6">
-        {/* Titre principal avec effet street */}
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tighter text-center text-white mb-6 md:mb-8">
-          <span className="relative inline-block">
-            <span className="relative">VATH</span>
-            <span className="absolute top-1.5 left-1.5 md:top-2 md:left-2 text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-zinc-800 -z-10">
-              VATH
-            </span>
-          </span>
-        </h1>
-
-        {/* Sous-titre */}
-        <p className="text-zinc-300 text-base md:text-lg lg:text-xl uppercase tracking-wider text-center mb-8 md:mb-12">
-          Photographer • Director • Videographer
-        </p>
-
-        {/* Ligne décorative */}
-        <div className="flex items-center gap-4 mb-12 md:mb-16">
-          <div className="h-px w-12 md:w-16 bg-white opacity-30"></div>
-          <div className="w-2 h-2 border border-white opacity-50"></div>
-          <div className="h-px w-12 md:w-16 bg-white opacity-30"></div>
-        </div>
-
-        {/* Boutons CTA */}
-        <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
-          <Link
-            href="/contact"
-            className="px-8 md:px-10 py-4 md:py-5 bg-transparent border-2 border-white text-white font-black uppercase tracking-wider text-sm md:text-base transition-all duration-200 hover:bg-white hover:text-black"
-          >
-            Me contacter
-          </Link>
-        </div>
+        {currentImage ? (
+          <div className="relative w-full h-full">
+            <img
+              src={currentImage}
+              alt="Background artistique"
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+              loading="eager"
+            />
+            {/* Overlay sombre pour la lisibilité */}
+            <div className="absolute inset-0 bg-black/70"></div>
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800"></div>
+        )}
       </div>
     </section>
   );

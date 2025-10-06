@@ -62,38 +62,15 @@ export default function PhotosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
-        {/* Background blobs animés */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-20 left-10 w-40 h-40 bg-blue-200 rounded-full blur-3xl animate-blob animate-slow"></div>
-          <div className="absolute top-40 right-20 w-60 h-60 bg-purple-200 rounded-full blur-3xl animate-blob animate-slow animation-delay-2000"></div>
-          <div className="absolute bottom-20 left-1/3 w-50 h-50 bg-pink-200 rounded-full blur-3xl animate-blob animate-slow animation-delay-4000"></div>
-          <div className="absolute top-1/2 right-1/3 w-32 h-32 bg-cyan-200 rounded-full blur-3xl animate-blob animate-slow animation-delay-1000"></div>
-        </div>
-
-        <div className="flex flex-col items-center gap-6 relative z-10">
-          <div className="relative w-20 h-20">
-            <div className="absolute inset-0 border-4 border-zinc-200"></div>
-            <div className="absolute inset-0 border-4 border-black border-t-transparent animate-spin"></div>
-            <div
-              className="absolute inset-2 border-2 border-zinc-300 border-b-transparent animate-spin"
-              style={{ animationDuration: "1.5s", animationDirection: "reverse" }}
-            />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[#090860] border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-black text-sm font-black uppercase tracking-wider">
-              Loading
-            </p>
-            <span className="flex gap-1">
-              {[0, 150, 300].map((delay) => (
-                <span
-                  key={delay}
-                  className="w-1 h-1 bg-black rounded-full animate-bounce"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
-              ))}
-            </span>
-          </div>
+          <p className="text-[#090860] text-sm font-semibold uppercase tracking-wider">
+            Loading...
+          </p>
         </div>
       </div>
     );
@@ -101,22 +78,6 @@ export default function PhotosPage() {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Background animé */}
-      <div className="fixed inset-0 pointer-events-none">
-        {[
-          { top: "-20%", left: "-10%", w: "w-96", h: "h-96", color: "bg-black/30", delay: 0 },
-          { top: "40%", right: "20%", w: "w-96", h: "h-96", color: "bg-black/30", delay: 2000 },
-          { bottom: "-20%", left: "80%", w: "w-96", h: "h-96", color: "bg-black/30", delay: 4000 },
-          { top: "50%", right: "30%", w: "w-32", h: "h-32", color: "bg-black/30", delay: 1000 },
-        ].map((blob, i) => (
-          <div
-            key={i}
-            className={`absolute ${blob.top ? `top-[${blob.top}]` : ""} ${blob.left ? `left-[${blob.left}]` : ""} ${blob.right ? `right-[${blob.right}]` : ""} ${blob.w} ${blob.h} ${blob.color} rounded-full blur-3xl animate-blob animate-slow`}
-            style={{ animationDelay: `${blob.delay}ms` }}
-          ></div>
-        ))}
-      </div>
-
       {/* Header */}
       <header className="pt-24 pb-12 md:pt-32 md:pb-16 px-4 md:px-6 relative z-10 text-center">
         <h1 className="text-4xl md:text-5xl lg:text-6xl text-black font-black uppercase tracking-tighter mb-4 animate-in slide-in-from-top-4 fade-in duration-700">
@@ -139,29 +100,35 @@ export default function PhotosPage() {
                 <Link
                   key={sticker.tag}
                   href={`/photo/${sticker.tag}`}
-                  className="group relative aspect-square overflow-hidden bg-black border-4 border-black hover:border-zinc-400 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/20 animate-in fade-in zoom-in-95 duration-500"
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  className="group relative aspect-square overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02] will-change-transform"
+                  style={{ 
+                    animationDelay: `${index * 80}ms`,
+                  }}
                 >
+                  {/* Image avec optimisation */}
                   <Image
                     src={sticker.randomPhoto}
                     alt={sticker.tag}
                     fill
-                    className="object-cover group-hover:scale-110 group-hover:rotate-2 transition-all duration-700 ease-out"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                     quality={85}
+                    priority={index < 4}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent opacity-70 group-hover:opacity-85 transition-opacity duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-                    <h3 className="text-2xl md:text-3xl font-black uppercase text-white mb-2 tracking-tight transform group-hover:scale-110 group-hover:-translate-y-2 transition-all duration-300 drop-shadow-lg">
+                  
+                  {/* Overlay avec backdrop blur */}
+                  <div className="absolute inset-0 bg-black/0 backdrop-blur-0 group-hover:bg-black/60 transition-all duration-400 ease-out" />
+                  
+                  {/* Texte - visible uniquement au hover */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 translate-y-6 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-400 ease-out text-center px-4 pointer-events-none">
+                    <h3 className="text-2xl md:text-3xl font-black uppercase text-white mb-2 tracking-tight drop-shadow-2xl">
                       {sticker.tag}
                     </h3>
-                    <p className="text-xs md:text-sm text-zinc-300 uppercase tracking-wider opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75">
+                    <p className="text-xs md:text-sm text-white/90 uppercase tracking-wider font-medium">
                       {sticker.count} {sticker.count > 1 ? "Photos" : "Photo"}
                     </p>
                   </div>
-                  <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0"></div>
-                  <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0"></div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-60 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                 </Link>
               ))}
             </div>
@@ -179,19 +146,10 @@ export default function PhotosPage() {
       </main>
 
       <style jsx>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animate-slow {
-          animation-duration: 10s !important;
-        }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
     </div>
   );
