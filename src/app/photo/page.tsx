@@ -20,7 +20,7 @@ interface TagSticker {
 }
 
 export default function PhotosPage() {
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [, setPhotos] = useState<Photo[]>([]);
   const [tagStickers, setTagStickers] = useState<TagSticker[]>([]);
   const [loading, setLoading] = useState(true);
 

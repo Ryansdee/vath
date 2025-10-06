@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 export default function AboutPage() {
   return (
@@ -24,7 +25,7 @@ export default function AboutPage() {
               {/* Image */}
               <div className="flex-shrink-0">
                 <div className="relative w-48 h-48 md:w-56 md:h-56 mx-auto md:mx-0">
-                  <img
+                  <Image
                     src="/logo.jpg"
                     alt="Vadim Thevelin"
                     className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300"
@@ -54,7 +55,7 @@ export default function AboutPage() {
                   </p>
 
                   <p>
-                    I'm a visual creator passionate about capturing the essence of moments through 
+                    I&apos;m a visual creator passionate about capturing the essence of moments through 
                     photography, direction, and videography. Each project is an opportunity to tell 
                     a unique story and create images that resonate with authenticity and emotion.
                   </p>
@@ -126,7 +127,7 @@ export default function AboutPage() {
           <section className="animate-fade-in-up bg-gray-50 -mx-6 px-6 py-16 md:-mx-0 md:px-12" style={{ animationDelay: "200ms" }}>
             <div className="max-w-2xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-black mb-6 tracking-tight">
-                Let's work together
+                Let&apos;s work together
               </h2>
 
               <p className="text-gray-600 mb-10 leading-relaxed">

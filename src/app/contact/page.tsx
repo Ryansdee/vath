@@ -48,7 +48,7 @@ export default function ContactPage() {
             Contact
           </h1>
           <p className="text-gray-500 text-sm">
-            Let's discuss your project
+            Let&apos;s discuss your project
           </p>
         </div>
       </header>
@@ -109,7 +109,7 @@ export default function ContactPage() {
             {/* Status messages */}
             {status === "success" && (
               <div className="p-4 bg-green-50 border border-green-200 text-green-800 text-sm">
-                Thank you for your message! I'll get back to you soon.
+                Thank you for your message! I&apos;ll get back to you soon.
               </div>
             )}
 
