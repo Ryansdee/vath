@@ -23,7 +23,7 @@ export default function Footer() {
           <div className="flex flex-col items-center gap-2 py-6 md:py-0">
             <div className="w-12 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent mb-2"></div>
             <p className="text-gray-600 text-xs uppercase tracking-[0.2em] font-medium">
-              PHOTOGRAPHER • DIRECTOR • VIDEOGRAPHER
+              Creativity & Passion
             </p>
             <div className="w-12 h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent mt-2"></div>
           </div>

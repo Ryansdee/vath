@@ -5,11 +5,14 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, db } from "../../../lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import Image from "next/image";
+import Link from "next/link";
 
 interface FileWithPreview {
   file: File;
   preview: string;
 }
+
+type Category = "photo" | "video" | "personal-project" | "blog";
 
 export default function AdminPage() {
   // --- Protection par code ---
@@ -21,8 +24,16 @@ export default function AdminPage() {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
+  const [category, setCategory] = useState<Category>("photo");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const categories: { value: Category; label: string; icon: string }[] = [
+    { value: "photo", label: "Photo", icon: "📸" },
+    { value: "video", label: "Video", icon: "🎥" },
+    { value: "personal-project", label: "Personal Project", icon: "🚀" },
+    { value: "blog", label: "Blog", icon: "✍️" }
+  ];
 
   // --- Vérification du code ---
   const handleAccess = (e: React.FormEvent) => {
@@ -68,6 +79,7 @@ export default function AdminPage() {
           customMetadata: {
             originalSize: file.size.toString(),
             uploadDate: new Date().toISOString(),
+            category: category,
           },
           cacheControl: "public, max-age=31536000",
         };
@@ -79,6 +91,7 @@ export default function AdminPage() {
           url,
           description,
           tags: tags.split(",").map((t) => t.trim()),
+          category: category,
           createdAt: new Date(),
           metadata: {
             fileName: file.name,
@@ -91,7 +104,7 @@ export default function AdminPage() {
         setUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
       }
 
-      alert(`✓ ${totalFiles} image(s) uploaded successfully in high quality!`);
+      alert(`✓ ${totalFiles} item(s) uploaded successfully in high quality to ${category}!`);
       setFiles([]);
       setDescription("");
       setTags("");
@@ -104,7 +117,7 @@ export default function AdminPage() {
     }
   };
 
-  // --- Si le code n’est pas encore validé ---
+  // --- Si le code n'est pas encore validé ---
   if (!accessGranted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -143,6 +156,19 @@ export default function AdminPage() {
           <p className="text-gray-500 text-sm">
             High quality upload • No compression
           </p>
+          
+          {/* Bouton vers la gestion des textes */}
+          <div className="mt-8">
+            <Link 
+              href="/admin/texts"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Manage Tag Texts
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -151,15 +177,55 @@ export default function AdminPage() {
         <div className="max-w-4xl mx-auto">
           <form onSubmit={handleUpload} className="space-y-8">
             
+            {/* Category Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Category *
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    type="button"
+                    onClick={() => setCategory(cat.value)}
+                    disabled={uploading}
+                    className={`
+                      relative p-4 border-2 transition-all duration-200
+                      ${category === cat.value 
+                        ? 'border-black bg-black text-white' 
+                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                      }
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                  >
+                    <div className="text-2xl mb-2">{cat.icon}</div>
+                    <div className="text-sm font-semibold uppercase tracking-wide">
+                      {cat.label}
+                    </div>
+                    {category === cat.value && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-white text-black rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-gray-500 text-xs mt-2">
+                Choose where your content will be stored
+              </p>
+            </div>
+
             {/* Upload Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Images ({files.length})
+                Files ({files.length})
               </label>
               
               <input
                 type="file"
-                accept="image/*"
+                accept={category === "video" ? "video/*,image/*" : "image/*"}
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
@@ -177,7 +243,7 @@ export default function AdminPage() {
                   Click to upload or drag and drop
                 </p>
                 <p className="text-gray-400 text-xs">
-                  JPG, PNG • Max quality preserved
+                  {category === "video" ? "Video or Image files" : "JPG, PNG"} • Max quality preserved
                 </p>
               </label>
 
@@ -222,7 +288,7 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                placeholder="Describe your photos..."
+                placeholder="Describe your content..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
@@ -259,7 +325,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <p className="text-gray-600 text-sm text-center">
-                  {uploadProgress}% - Uploading...
+                  {uploadProgress}% - Uploading to {category}...
                 </p>
               </div>
             )}
@@ -276,7 +342,7 @@ export default function AdminPage() {
                   Uploading...
                 </span>
               ) : (
-                `Upload ${files.length} photo${files.length > 1 ? "s" : ""}`
+                `Upload ${files.length} item${files.length > 1 ? "s" : ""} to ${category}`
               )}
             </button>
           </form>

@@ -1,49 +1,71 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { db } from "../../../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
+import Image from "next/image";
+import Link from "next/link";
 
-interface Project {
+interface Photo {
   id: string;
-  title: string;
+  url: string;
   description: string;
-  coverImage: string;
-  category: string;
-  year: string;
   tags: string[];
-  createdAt: Date;
+  category?: string;
+}
+
+interface TagSticker {
+  tag: string;
+  count: number;
+  randomPhoto: string;
 }
 
 export default function PersonalProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [, setPhotos] = useState<Photo[]>([]);
+  const [tagStickers, setTagStickers] = useState<TagSticker[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchPhotos = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "projects"));
-        const data = snapshot.docs.map((doc) => ({
+        const snapshot = await getDocs(collection(db, "photos"));
+        const data: Photo[] = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
-        } as Project));
-        setProjects(data.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+          ...(doc.data() as Omit<Photo, "id">),
+        }));
+        
+        // Filtrer uniquement les items avec category "personal-project"
+        const filteredData = data.filter(photo => 
+          photo.category === "personal-project"
+        );
+        
+        setPhotos(filteredData);
+
+        const tagMap = new Map<string, Photo[]>();
+        filteredData.forEach(photo => {
+          photo.tags.forEach(tag => {
+            if (!tagMap.has(tag)) tagMap.set(tag, []);
+            tagMap.get(tag)?.push(photo);
+          });
+        });
+
+        const stickers: TagSticker[] = Array.from(tagMap.entries()).map(
+          ([tag, photos]) => ({
+            tag,
+            count: photos.length,
+            randomPhoto: photos[Math.floor(Math.random() * photos.length)].url,
+          })
+        );
+
+        setTagStickers(stickers);
       } catch (error) {
-        console.error("Error loading projects:", error);
+        console.error("Erreur lors du chargement des projets:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProjects();
+    fetchPhotos();
   }, []);
-
-  const categories = ["all", ...Array.from(new Set(projects.map(p => p.category)))];
-  const filteredProjects = selectedCategory === "all" 
-    ? projects 
-    : projects.filter(p => p.category === selectedCategory);
 
   if (loading) {
     return (
@@ -62,123 +84,80 @@ export default function PersonalProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Header */}
-      <header className="pt-32 pb-16 px-6 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
-            Personal Projects
-          </h1>
-          <p className="text-gray-500 text-sm">
-            {filteredProjects.length} {filteredProjects.length > 1 ? "projects" : "project"}
-          </p>
+      <header className="pt-24 pb-12 md:pt-32 md:pb-16 px-4 md:px-6 relative z-10 text-center">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl text-black font-black uppercase tracking-tighter mb-4 animate-in slide-in-from-top-4 fade-in duration-700">
+          Personal Projects
+        </h1>
+        <p className="text-zinc-500 text-sm md:text-base uppercase tracking-wider mb-6 animate-in fade-in duration-700 delay-200">
+          {tagStickers.length} {tagStickers.length > 1 ? "Collections" : "Collection"}
+        </p>
+        <div className="flex justify-center">
+          <div className="h-px w-16 md:w-24 bg-gradient-to-r from-transparent via-black to-transparent opacity-20"></div>
         </div>
       </header>
 
-      {/* Filters */}
-      {categories.length > 1 && (
-        <div className="px-6 py-8 border-b border-gray-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-wrap gap-3">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                    selectedCategory === category
-                      ? "bg-[#090860] text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Grid */}
-      <main className="px-6 py-16">
+      {/* Stickers Grid */}
+      <main className="px-4 md:px-6 pb-16 md:pb-24 relative z-10">
         <div className="max-w-7xl mx-auto">
-          {filteredProjects.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {filteredProjects.map((project, index) => (
+          {tagStickers.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {tagStickers.map((sticker, index) => (
                 <Link
-                  key={project.id}
-                  href={`/personal-projects/${project.id}`}
-                  className="group animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  key={sticker.tag}
+                  href={`/personal-projects/${sticker.tag}`}
+                  title={`See collection of "${sticker.tag}" (${sticker.count} items)`}
+                  className="group relative aspect-square overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02] will-change-transform"
+                  style={{ 
+                    animationDelay: `${index * 80}ms`,
+                  }}
                 >
-                  <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1">
-                    <Image
-                      src={project.coverImage}
-                      alt={project.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      quality={90}
-                      priority={index < 2}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#090860] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                  </div>
-                  <div className="mt-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">
-                        {project.category}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">{project.year}</span>
-                    </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-black mb-3 tracking-tight group-hover:text-[#090860] transition-colors">
-                      {project.title}
-                    </h2>
-                    <p className="text-sm md:text-base text-gray-600 line-clamp-3 mb-4">
-                      {project.description}
+                  <Image
+                    src={sticker.randomPhoto}
+                    alt={sticker.tag}
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    quality={85}
+                    priority={index < 4}
+                  />
+                  
+                  {/* Overlay - toujours visible sur mobile, hover sur desktop */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:bg-black/0 md:backdrop-blur-0 md:group-hover:bg-black/60 transition-all duration-400 ease-out" />
+                  
+                  {/* Texte - toujours visible sur mobile, hover sur desktop */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-end md:justify-center pb-4 md:pb-0 opacity-100 translate-y-0 md:opacity-0 md:translate-y-6 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-400 ease-out text-center px-4 pointer-events-none">
+                    <h3 className="text-xl md:text-3xl font-black uppercase text-white mb-1 md:mb-2 tracking-tight drop-shadow-2xl">
+                      {sticker.tag}
+                    </h3>
+                    <p className="text-xs md:text-sm text-white/90 uppercase tracking-wider font-medium">
+                      {sticker.count} {sticker.count > 1 ? "Items" : "Item"}
                     </p>
-                    {project.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {project.tags.map((tag, i) => (
-                          <span
-                            key={i}
-                            className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Barre du bas - visible uniquement au hover sur desktop */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left hidden md:block" />
                 </Link>
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-32">
-              <p className="text-gray-400 text-sm">No projects available</p>
+            <div className="flex flex-col items-center justify-center py-24 animate-in fade-in duration-700">
+              <div className="w-20 h-20 border-4 border-zinc-300 flex items-center justify-center mb-8 animate-pulse">
+                <span className="text-3xl text-zinc-400 font-black">∅</span>
+              </div>
+              <p className="text-zinc-600 text-base uppercase tracking-wider text-center">
+                No projects available yet
+              </p>
             </div>
           )}
         </div>
       </main>
 
       <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-          opacity: 0;
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

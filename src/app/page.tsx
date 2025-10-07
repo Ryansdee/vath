@@ -49,7 +49,7 @@ export default function HomePage() {
     const interval = setInterval(() => {
       const randomIndex = Math.floor(Math.random() * images.length);
       setCurrentImage(images[randomIndex]);
-    }, 15000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [images]);

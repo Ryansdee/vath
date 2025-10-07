@@ -24,8 +24,6 @@ export default function PhotosPage() {
   const [tagStickers, setTagStickers] = useState<TagSticker[]>([]);
   const [loading, setLoading] = useState(true);
 
-
-
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -34,10 +32,17 @@ export default function PhotosPage() {
           id: doc.id,
           ...(doc.data() as Omit<Photo, "id">),
         }));
-        setPhotos(data);
+        
+        // Filtrer uniquement les photos avec category "photo"
+        const filteredData = data.filter(photo => {
+          const photoData = photo as any;
+          return photoData.category === "photo" || !photoData.category; // Inclut aussi celles sans category pour rétrocompatibilité
+        });
+        
+        setPhotos(filteredData);
 
         const tagMap = new Map<string, Photo[]>();
-        data.forEach(photo => {
+        filteredData.forEach(photo => {
           photo.tags.forEach(tag => {
             if (!tagMap.has(tag)) tagMap.set(tag, []);
             tagMap.get(tag)?.push(photo);
@@ -102,14 +107,12 @@ export default function PhotosPage() {
                 <Link
                   key={sticker.tag}
                   href={`/photo/${sticker.tag}`}
-                  title={`Voir la collection "${sticker.tag}" (${sticker.count} photos)` }
+                  title={`See collection of "${sticker.tag}" (${sticker.count} photos)`}
                   className="group relative aspect-square overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02] will-change-transform"
                   style={{ 
                     animationDelay: `${index * 80}ms`,
                   }}
-                  
                 >
-                  {/* Image avec optimisation */}
                   <Image
                     src={sticker.randomPhoto}
                     alt={sticker.tag}
@@ -120,19 +123,21 @@ export default function PhotosPage() {
                     priority={index < 4}
                   />
                   
-                  {/* Overlay avec backdrop blur */}
-                  <div className="absolute inset-0 bg-black/0 backdrop-blur-0 group-hover:bg-black/60 transition-all duration-400 ease-out" />
+                  {/* Overlay - toujours visible sur mobile, hover sur desktop */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:bg-black/0 md:backdrop-blur-0 md:group-hover:bg-black/60 transition-all duration-400 ease-out" />
                   
-                  {/* Texte - visible uniquement au hover */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 translate-y-6 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-400 ease-out text-center px-4 pointer-events-none">
-                    <h3 className="text-2xl md:text-3xl font-black uppercase text-white mb-2 tracking-tight drop-shadow-2xl">
+                  {/* Texte - toujours visible sur mobile, hover sur desktop */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-end md:justify-center pb-4 md:pb-0 opacity-100 translate-y-0 md:opacity-0 md:translate-y-6 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-400 ease-out text-center px-4 pointer-events-none">
+                    <h3 className="text-xl md:text-3xl font-black uppercase text-white mb-1 md:mb-2 tracking-tight drop-shadow-2xl">
                       {sticker.tag}
                     </h3>
                     <p className="text-xs md:text-sm text-white/90 uppercase tracking-wider font-medium">
                       {sticker.count} {sticker.count > 1 ? "Photos" : "Photo"}
                     </p>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+
+                  {/* Barre du bas - visible uniquement au hover sur desktop */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left hidden md:block" />
                 </Link>
               ))}
             </div>
