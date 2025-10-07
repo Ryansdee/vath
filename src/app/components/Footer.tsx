@@ -11,7 +11,7 @@ export default function Footer() {
             <p className="text-gray-700 text-xs uppercase tracking-widest font-semibold">
               © 2022 - {new Date().getFullYear()}
             </p>
-            <p className="text-[#090860] text-sm font-bold tracking-tight">
+            <p className="text-[#090860] text-sm tracking-tight">
               Vadim Thevelin
             </p>
             <p className="text-gray-500 text-xs tracking-wide">
@@ -66,6 +66,9 @@ export default function Footer() {
             </div>
           </div>
         </div>
+          <div className="absolute mx-auto text-[10px] text-gray-500 italic">
+            made by <a href="https://ryansdee.netlify.app/" className="underline underline-offset-2">Ryansdee</a> 
+          </div>
       </div>
     </footer>
   );

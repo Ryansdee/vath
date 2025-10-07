@@ -9,24 +9,24 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const linksLeft = [
-    { href: "/personal-projects", label: "Personal Projects" },
+    { href: "/diary", label: "Diary" },
     { href: "/video", label: "Video" },
     { href: "/photo", label: "Photos" },
   ];
 
   const linksRight = [
     { href: "/about", label: "About Me" },
-    { href: "/media", label: "Media" },
+    { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
   ];
 
   const mobileLinks = [
     { href: "/", label: "Home" },
-    { href: "/personal-projects", label: "Personal Projects" },
+    { href: "/diary", label: "Diary" },
     { href: "/video", label: "Video" },
     { href: "/photo", label: "Photos" },
     { href: "/about", label: "About" },
-    { href: "/media", label: "Media" },
+    { href: "/blog", label: "Blog" },
     { href: "/contact", label: "Contact" },
   ];
 
@@ -71,9 +71,9 @@ export default function Navbar() {
           <div className="flex justify-center">
             <Link
               href="/"
-              className="text-xl font-bold tracking-tighter text-[#090860] transition-opacity duration-200 whitespace-nowrap hover:opacity-80"
+              className="text-xl tracking-tighter text-[#090860] transition-opacity duration-200 whitespace-nowrap hover:opacity-80"
             >
-              Vadmin Thevelin
+              Vadim Thevelin
             </Link>
           </div>
 

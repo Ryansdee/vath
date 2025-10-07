@@ -188,7 +188,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                                 href={`https://www.instagram.com/${username}/`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-black font-bold hover:text-zinc-600 underline decoration-2 underline-offset-2 transition-colors"
+                                className="text-[#090860] hover:text-blue-600 underline decoration-2 underline-offset-2 transition-colors"
                               >
                                 {part}
                               </a>
@@ -206,7 +206,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                     onClick={() => setShowFullText(!showFullText)}
                     className="mt-6 text-sm font-semibold text-black hover:text-zinc-600 uppercase tracking-wider flex items-center gap-2 group/btn transition-colors"
                   >
-                    {showFullText ? 'Réduire' : 'Lire plus'}
+                    {showFullText ? 'Reduce' : 'Read more'}
                     <svg 
                       className={`w-4 h-4 transition-transform ${showFullText ? 'rotate-180' : ''}`} 
                       fill="none" 
@@ -221,7 +221,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                 {/* Date discrète */}
                 <div className="mt-8 pt-6 border-t border-zinc-100">
                   <p className="text-xs text-zinc-400 uppercase tracking-widest">
-                    Mis à jour le {tagText.updatedAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    Uploaded at {tagText.updatedAt.toLocaleDateString('en-EN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>
@@ -239,7 +239,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
               {tagText && (
                 <div className="mb-12 text-center">
                   <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">
-                    Galerie
+                    Gallery
                   </h3>
                   <div className="mt-4 h-px w-24 bg-black mx-auto"></div>
                 </div>

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Acid";
+  src: url(./AcidGrotesk.ttf);
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -17,6 +22,10 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+*{
+  font-family: "Acid", sans-serif;
 }
 
 body {

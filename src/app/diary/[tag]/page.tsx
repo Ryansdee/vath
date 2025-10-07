@@ -127,7 +127,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
           {/* Breadcrumb stylisé */}
           <div className="mb-6 md:mb-8">
             <Link 
-              href="/photo" 
+              href="/diary" 
               className="group inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-black uppercase tracking-wider transition-all duration-200 font-medium"
             >
               <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,7 +221,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                 {/* Date discrète */}
                 <div className="mt-8 pt-6 border-t border-zinc-100">
                   <p className="text-xs text-zinc-400 uppercase tracking-widest">
-                    Mis à jour le {tagText.updatedAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    Uploaded at {tagText.updatedAt.toLocaleDateString('en-EN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
               </div>
@@ -239,7 +239,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
               {tagText && (
                 <div className="mb-12 text-center">
                   <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">
-                    Galerie
+                    Gallery
                   </h3>
                   <div className="mt-4 h-px w-24 bg-black mx-auto"></div>
                 </div>
@@ -300,13 +300,13 @@ export default function PhotosByTagPage({ params }: PageProps) {
                 </svg>
               </div>
               <p className="text-zinc-500 text-lg uppercase tracking-wider font-semibold text-center">
-                Aucune photo dans cette collection
+                No photos found for this collection.
               </p>
               <Link 
                 href="/photo"
                 className="mt-6 px-6 py-3 bg-black text-white text-sm uppercase tracking-wider font-semibold hover:bg-zinc-800 transition-colors"
               >
-                Voir toutes les collections
+                Explore All Photos
               </Link>
             </div>
           )}
@@ -391,7 +391,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
           {/* Aide navigation clavier */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-xs uppercase tracking-widest font-medium hidden md:block">
-            ← → pour naviguer • ESC pour fermer
+            ← → for navigating • ESC to close
           </div>
         </div>
       )}
