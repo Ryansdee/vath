@@ -11,6 +11,7 @@ interface Photo {
   url: string;
   description: string;
   tags: string[];
+  category?: string;
 }
 
 interface TagSticker {
