@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import Image from "next/image";
 
 interface Photo {
   id: string;
@@ -78,7 +79,7 @@ export default function HomePage() {
       <div className="absolute inset-0 z-0">
         {currentImage ? (
           <div className="relative w-full h-full">
-            <img
+            <Image
               src={currentImage}
               alt="Background artistique"
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"

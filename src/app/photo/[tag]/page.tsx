@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import { db } from "../../../../lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import Image from "next/image";
@@ -79,19 +79,19 @@ export default function PhotosByTagPage({ params }: PageProps) {
   }, [tag]);
 
   // Navigation entre photos
-  const handlePrevPhoto = () => {
+  const handlePrevPhoto = useCallback(() => {
     if (!selectedPhoto) return;
     const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
     const prevIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
     setSelectedPhoto(photos[prevIndex]);
-  };
+  }, [selectedPhoto, photos]);
 
-  const handleNextPhoto = () => {
+  const handleNextPhoto = useCallback(() => {
     if (!selectedPhoto) return;
     const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
     const nextIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
     setSelectedPhoto(photos[nextIndex]);
-  };
+  }, [selectedPhoto, photos]);
 
   // Navigation clavier
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedPhoto, photos]);
+  }, [selectedPhoto, handlePrevPhoto, handleNextPhoto]);
 
   if (loading) {
     return (
@@ -300,7 +300,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                 </svg>
               </div>
               <p className="text-zinc-500 text-lg uppercase tracking-wider font-semibold text-center">
-                No photos found for "{tag}"
+                No photos found for &ldquo;{tag}&rdquo;
               </p>
               <Link 
                 href="/photo"

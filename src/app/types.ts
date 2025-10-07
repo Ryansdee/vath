@@ -3,4 +3,5 @@ export interface Photo {
   alt: string;
   description: string;
   tags: string[];
+  category?: string; // <-- ajouté
 }
