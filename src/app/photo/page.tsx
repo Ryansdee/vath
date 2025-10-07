@@ -35,10 +35,9 @@ export default function PhotosPage() {
         }));
         
         // Filtrer uniquement les photos avec category "photo"
-        const filteredData = data.filter(photo => {
-          const photoData = photo as any;
-          return photoData.category === "photo" || !photoData.category; // Inclut aussi celles sans category pour rétrocompatibilité
-        });
+        const filteredData = data.filter(
+          (photo) => photo.category === "photo" || !photo.category
+        );
         
         setPhotos(filteredData);
 
