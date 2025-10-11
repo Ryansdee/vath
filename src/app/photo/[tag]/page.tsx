@@ -11,6 +11,8 @@ interface Photo {
   url: string;
   description: string;
   tags: string[];
+  instagramLink?: string;
+  youtubeLink?: string;
 }
 
 interface TagText {
@@ -33,14 +35,15 @@ export default function PhotosByTagPage({ params }: PageProps) {
   const [tagText, setTagText] = useState<TagText | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const [showFullText, setShowFullText] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [showInfo, setShowInfo] = useState(false);
   const { tag: rawTag } = use(params);
   const tag = decodeURIComponent(rawTag);
+  console.log("Tag from URL:", tag);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Charger les photos
         const photosSnapshot = await getDocs(collection(db, "photos"));
         const allPhotos = photosSnapshot.docs.map((doc) => ({
           id: doc.id,
@@ -53,7 +56,6 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
         setPhotos(filteredPhotos);
 
-        // Charger le texte associé au tag
         const textsQuery = query(
           collection(db, "tagTexts"),
           where("tag", "==", tag)
@@ -78,12 +80,13 @@ export default function PhotosByTagPage({ params }: PageProps) {
     fetchData();
   }, [tag]);
 
-  // Navigation entre photos
   const handlePrevPhoto = useCallback(() => {
     if (!selectedPhoto) return;
     const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
     const prevIndex = currentIndex > 0 ? currentIndex - 1 : photos.length - 1;
     setSelectedPhoto(photos[prevIndex]);
+    setZoom(1);
+    setShowInfo(false);
   }, [selectedPhoto, photos]);
 
   const handleNextPhoto = useCallback(() => {
@@ -91,15 +94,31 @@ export default function PhotosByTagPage({ params }: PageProps) {
     const currentIndex = photos.findIndex(p => p.id === selectedPhoto.id);
     const nextIndex = currentIndex < photos.length - 1 ? currentIndex + 1 : 0;
     setSelectedPhoto(photos[nextIndex]);
+    setZoom(1);
+    setShowInfo(false);
   }, [selectedPhoto, photos]);
 
-  // Navigation clavier
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.5, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.5, 1));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedPhoto) return;
       if (e.key === "ArrowLeft") handlePrevPhoto();
       if (e.key === "ArrowRight") handleNextPhoto();
-      if (e.key === "Escape") setSelectedPhoto(null);
+      if (e.key === "Escape") {
+        setSelectedPhoto(null);
+        setZoom(1);
+        setShowInfo(false);
+      }
+      if (e.key === "+" || e.key === "=") handleZoomIn();
+      if (e.key === "-") handleZoomOut();
+      if (e.key === "i" || e.key === "I") setShowInfo(prev => !prev);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -110,307 +129,250 @@ export default function PhotosByTagPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-zinc-300 border-t-black rounded-full animate-spin"></div>
-          <p className="text-zinc-600 text-sm uppercase tracking-wider font-medium">Chargement...</p>
+          <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin"></div>
+          <p className="text-black text-sm uppercase tracking-wider font-light">Loading...</p>
         </div>
       </div>
     );
   }
 
-  const isTextLong = tagText && tagText.content.length > 400;
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header amélioré */}
-      <div className="pt-24 pb-8 md:pt-32 md:pb-12 px-4 md:px-6 border-b border-zinc-100">
-        <div className="max-w-7xl mx-auto">
-          {/* Breadcrumb stylisé */}
-          <div className="mb-6 md:mb-8">
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
+        
+        * {
+          font-family: 'Acid Grotesk', sans-serif;
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <div className="pt-24 pb-8 px-4 md:px-6">
+          <div className="max-w-7xl mx-auto">
             <Link 
               href="/photo" 
-              className="group inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-black uppercase tracking-wider transition-all duration-200 font-medium"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black uppercase tracking-wider transition-colors font-light mb-6"
             >
-              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Collections
             </Link>
-          </div>
 
-          {/* Titre avec animation */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter text-black mb-2 animate-fade-in">
+            <h1 className="text-4xl md:text-6xl font-light uppercase tracking-tight text-black">
               {tag}
             </h1>
-
-            <div className="flex items-center justify-center gap-4">
-              <div className="h-px w-12 bg-black/20"></div>
-              <p className="text-zinc-500 text-xs md:text-sm uppercase tracking-[0.2em] font-semibold">
-                {photos.length} {photos.length > 1 ? 'Photos' : 'Photo'}
-              </p>
-              <div className="h-px w-12 bg-black/20"></div>
-            </div>
+            <p className="text-gray-500 text-sm uppercase tracking-wider mt-3 font-light">
+              {photos.length} {photos.length > 1 ? 'Photos' : 'Photo'}
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Section texte d'introspection optimisée */}
-      {tagText && (
-        <div className="px-4 md:px-6 py-12 md:py-16 bg-gradient-to-b from-zinc-50/50 to-white">
-          <div className="max-w-4xl mx-auto">
-            <div className="relative group">
-              {/* Décoration d'angle */}
-              <div className="absolute -top-3 -left-3 w-6 h-6 border-t-2 border-l-2 border-black/20"></div>
-              <div className="absolute -bottom-3 -right-3 w-6 h-6 border-b-2 border-r-2 border-black/20"></div>
-              
-              <div className="bg-white border-l-4 border-black p-8 md:p-12 shadow-sm hover:shadow-md transition-shadow duration-300">
-                {tagText.title && (
-                  <div className="mb-6">
-                    <div className="inline-block">
-                      <h2 className="text-2xl md:text-4xl font-black text-black tracking-tight mb-2">
-                        {tagText.title}
-                      </h2>
-                      <div className="h-1 w-16 bg-black"></div>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="prose prose-lg prose-zinc max-w-none">
-                  <div className={`text-zinc-700 leading-[1.8] text-base md:text-lg ${!showFullText && isTextLong ? 'line-clamp-6' : ''}`}>
-                    {tagText.content.split('\n').map((paragraph, i) => (
-                      <p key={i} className="mb-4 last:mb-0">
-                        {paragraph.split(/(@[\w.]+)/).map((part, j) => {
-                          if (part.startsWith('@')) {
-                            const username = part.slice(1);
-                            return (
-                              <a
-                                key={j}
-                                href={`https://www.instagram.com/${username}/`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[#090860] hover:text-blue-600 underline decoration-2 underline-offset-2 transition-colors"
-                              >
-                                {part}
-                              </a>
-                            );
-                          }
-                          return <span key={j}>{part}</span>;
-                        })}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                {isTextLong && (
-                  <button
-                    onClick={() => setShowFullText(!showFullText)}
-                    className="mt-6 text-sm font-semibold text-black hover:text-zinc-600 uppercase tracking-wider flex items-center gap-2 group/btn transition-colors"
-                  >
-                    {showFullText ? 'Reduce' : 'Read more'}
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${showFullText ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                )}
-
-                {/* Date discrète */}
-                <div className="mt-8 pt-6 border-t border-zinc-100">
-                  <p className="text-xs text-zinc-400 uppercase tracking-widest">
-                    Uploaded at {tagText.updatedAt.toLocaleDateString('en-EN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Grille photos optimisée */}
-      <div className="px-4 md:px-6 py-16 md:py-24">
-        <div className="max-w-7xl mx-auto">
-          {photos.length > 0 ? (
-            <>
-              {/* Titre de section si texte présent */}
-              {tagText && (
-                <div className="mb-12 text-center">
-                  <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">
-                    Gallery
-                  </h3>
-                  <div className="mt-4 h-px w-24 bg-black mx-auto"></div>
-                </div>
-              )}
-              
-              <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6">
-                {photos.map((photo, index) => (
+        {/* Grille photos */}
+        <div className="px-4 md:px-6 py-8">
+          <div className="max-w-7xl mx-auto">
+            {photos.length > 0 ? (
+              <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+                {photos.map((photo) => (
                   <div
                     key={photo.id}
-                    className="break-inside-avoid group relative cursor-pointer animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="break-inside-avoid group relative cursor-pointer"
                     onClick={() => setSelectedPhoto(photo)}
                   >
-                    <div className="relative overflow-hidden bg-zinc-100 border-4 border-black hover:border-zinc-500 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                    <div className="relative overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02]">
                       <Image
                         src={photo.url}
                         alt={photo.description}
                         width={800}
                         height={600}
-                        className="w-full h-auto transition-all duration-700 group-hover:scale-110"
-                        quality={95}
-                        loading={index < 6 ? "eager" : "lazy"}
+                        className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
+                        quality={90}
                       />
-                      
-                      {/* Overlay amélioré */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                          <p className="text-white text-base font-semibold mb-3 line-clamp-2">
-                            {photo.description}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {photo.tags.filter(t => t !== tag).slice(0, 3).map((t, i) => (
-                              <span
-                                key={i}
-                                className="text-xs bg-white/30 backdrop-blur-sm text-white px-3 py-1 uppercase tracking-wider font-medium"
-                              >
-                                {t}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Badge numéro */}
-                      <div className="absolute top-4 left-4 w-8 h-8 bg-black text-white flex items-center justify-center text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                        {index + 1}
-                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32">
-              <div className="w-24 h-24 border-4 border-zinc-200 flex items-center justify-center mb-8 rounded-full">
-                <svg className="w-12 h-12 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24">
+                <p className="text-gray-400 text-lg uppercase tracking-wider font-light">
+                  No photos found
+                </p>
               </div>
-              <p className="text-zinc-500 text-lg uppercase tracking-wider font-semibold text-center">
-                No photos found for &ldquo;{tag}&rdquo;
-              </p>
-              <Link 
-                href="/photo"
-                className="mt-6 px-6 py-3 bg-black text-white text-sm uppercase tracking-wider font-semibold hover:bg-zinc-800 transition-colors"
+            )}
+          </div>
+        </div>
+
+        {/* Lightbox */}
+        {selectedPhoto && (
+          <div
+            className="fixed inset-0 bg-white z-50 flex items-center justify-center"
+            onClick={() => {
+              setSelectedPhoto(null);
+              setZoom(1);
+              setShowInfo(false);
+            }}
+          >
+            {/* Navigation buttons */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); handlePrevPhoto(); }}
+              className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 text-black hover:text-gray-600 transition-colors z-30 flex items-center justify-center"
+              aria-label="Previous"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleNextPhoto(); }}
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 text-black hover:text-gray-600 transition-colors z-30 flex items-center justify-center"
+              aria-label="Next"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Close button */}
+            <button 
+              className="absolute top-6 right-6 w-12 h-12 text-black hover:text-gray-600 transition-colors z-30 flex items-center justify-center"
+              onClick={() => {
+                setSelectedPhoto(null);
+                setZoom(1);
+                setShowInfo(false);
+              }}
+              aria-label="Close"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Zoom controls */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-white/90 backdrop-blur-sm px-6 py-3 shadow-lg z-30">
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+                className="text-black hover:text-gray-600 transition-colors"
+                disabled={zoom <= 1}
               >
-                Back to Collections
-              </Link>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                </svg>
+              </button>
+              <span className="text-sm font-light text-black min-w-[60px] text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+                className="text-black hover:text-gray-600 transition-colors"
+                disabled={zoom >= 3}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
+              </button>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Lightbox amélioré */}
-      {selectedPhoto && (
-        <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          {/* Boutons de navigation */}
-          <button 
-            onClick={(e) => { e.stopPropagation(); handlePrevPhoto(); }}
-            className="hidden md:block absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-30"
-            aria-label="Photo précédente"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+            {/* Info button */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowInfo(!showInfo); }}
+              className="absolute top-6 left-6 text-black hover:text-gray-600 transition-colors z-30 text-sm uppercase tracking-wider font-light"
+            >
+              {showInfo ? 'Hide Info' : 'Show Info'}
+            </button>
 
-          <button 
-            onClick={(e) => { e.stopPropagation(); handleNextPhoto(); }}
-            className="hidden md:block absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:scale-110 z-30"
-            aria-label="Photo suivante"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+            {/* Image container */}
+            <div 
+              className="relative overflow-auto max-w-[90vw] max-h-[85vh] flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={selectedPhoto.url}
+                alt={selectedPhoto.description}
+                width={2000}
+                height={2000}
+                className="object-contain transition-transform duration-300"
+                style={{ 
+                  transform: `scale(${zoom})`,
+                  maxWidth: '90vw',
+                  maxHeight: '85vh',
+                  width: 'auto',
+                  height: 'auto'
+                }}
+                quality={100}
+                priority
+              />
+            </div>
 
-          {/* Bouton fermeture */}
-          <button 
-            className="absolute top-4 md:top-6 right-4 md:right-6 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white flex items-center justify-center transition-all duration-300 hover:rotate-90 z-30 group"
-            onClick={() => setSelectedPhoto(null)}
-            aria-label="Fermer"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            {/* Info panel */}
+            {showInfo && (
+              <div 
+                className="absolute bottom-20 left-6 bg-white/95 backdrop-blur-sm p-6 max-w-md shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-black text-base font-light mb-4">
+                  {selectedPhoto.description}
+                </p>
+                
+                {tagText && (
+                  <div className="mb-4 pb-4 border-b border-gray-200">
+                    <h3 className="text-lg font-light uppercase tracking-tight text-black mb-2">
+                      {tagText.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 font-light leading-relaxed">
+                      {tagText.content}
+                    </p>
+                  </div>
+                )}
 
-          {/* Compteur */}
-          <div className="absolute top-4 md:top-6 left-4 md:left-6 px-4 py-2 bg-white/10 backdrop-blur-md text-white text-sm font-semibold uppercase tracking-wider z-30">
-            {photos.findIndex(p => p.id === selectedPhoto.id) + 1} / {photos.length}
-          </div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedPhoto.tags.map((t, i) => (
+                    <span
+                      key={i}
+                      className="text-xs text-black uppercase tracking-wider bg-gray-100 px-3 py-1 font-light"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
 
-          {/* Image */}
-          <div className="relative max-w-[90vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-            <Image
-              src={selectedPhoto.url}
-              alt={selectedPhoto.description}
-              width={1600}
-              height={1200}
-              className="max-h-[80vh] max-w-[85vw] w-auto h-auto object-contain"
-              quality={100}
-              priority
-            />
-            
-            {/* Bordure élégante */}
-            <div className="absolute inset-0 border-2 border-white/30 pointer-events-none"></div>
-
-            {/* Info en bas */}
-            <div className="absolute -bottom-24 md:-bottom-28 left-0 right-0 text-center px-4">
-              <p className="text-white text-sm md:text-base font-medium mb-3 line-clamp-2">
-                {selectedPhoto.description}
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {selectedPhoto.tags.map((t, i) => (
-                  <span
-                    key={i}
-                    className="text-xs text-white/70 uppercase tracking-wider bg-white/10 px-3 py-1 backdrop-blur-sm"
-                  >
-                    {t}
-                  </span>
-                ))}
+                {/* Social links */}
+                {(selectedPhoto.instagramLink || selectedPhoto.youtubeLink) && (
+                  <div className="flex gap-3 pt-4 border-t border-gray-200">
+                    {selectedPhoto.instagramLink && (
+                      <a
+                        href={selectedPhoto.instagramLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-black hover:text-gray-600 transition-colors font-light"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                        Instagram
+                      </a>
+                    )}
+                    {selectedPhoto.youtubeLink && (
+                      <a
+                        href={selectedPhoto.youtubeLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-black hover:text-gray-600 transition-colors font-light"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        </svg>
+                        YouTube
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Aide navigation clavier */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-xs uppercase tracking-widest font-medium hidden md:block">
-            ← Previous    •    Next →    •    Esc to Close
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
-      `}</style>
-    </div>
+        )}
+      </div>
+    </>
   );
 }

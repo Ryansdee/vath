@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLight, setIsLight] = useState(false);
   const pathname = usePathname();
 
   const linksLeft = [
@@ -35,15 +36,26 @@ export default function Navbar() {
     return pathname === href || pathname.startsWith(href + "/");
   };
 
+  // Détection simplifiée basée sur la route
+  useEffect(() => {
+    // Routes avec fond clair (blanc)
+    const lightRoutes = ['/about', '/blog', '/contact', '/photo', '/diary', '/video'];
+    setIsLight(lightRoutes.some(route => pathname.startsWith(route)));
+  }, [pathname]);
+
+  const textColor = isLight ? "text-black" : "text-white";
+  const inactiveColor = isLight ? "text-black" : "text-white";
+  const hoverColor = isLight ? "hover:text-black" : "hover:text-white";
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white border-b border-gray-200">
+    <nav className="top-0 left-0 right-0 z-50 bg-transparent absolute">
       <div className="flex items-center justify-between h-16 px-4 max-w-7xl mx-auto">
         {/* Burger menu - Mobile */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Menu"
           aria-expanded={isOpen}
-          className="md:hidden w-8 h-8 flex items-center justify-center text-[#090860] text-2xl font-light transition-transform duration-200 hover:scale-110 z-[60]"
+          className={`md:hidden w-8 h-8 flex items-center justify-center ${textColor} text-xl font-light transition-colors duration-200 hover:scale-110 z-[60]`}
         >
           {isOpen ? "✕" : "☰"}
         </button>
@@ -56,10 +68,8 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-0.5 border-b-[3px] ${
-                  isActive(link.href)
-                    ? "text-[#090860] border-[#090860]"
-                    : "text-gray-600 border-transparent hover:text-gray-900 hover:border-[#090860]"
+                className={`text-[10px] uppercase tracking-[0.15em] transition-colors duration-200 ${
+                  isActive(link.href) ? textColor : `${inactiveColor} ${hoverColor}`
                 }`}
               >
                 {link.label}
@@ -71,7 +81,7 @@ export default function Navbar() {
           <div className="flex justify-center">
             <Link
               href="/"
-              className="text-xl tracking-tighter text-[#090860] transition-opacity duration-200 whitespace-nowrap hover:opacity-80"
+              className={`text-sm tracking-tight ${textColor} transition-colors duration-200 whitespace-nowrap hover:opacity-60 font-light`}
             >
               Vadim Thevelin
             </Link>
@@ -83,10 +93,8 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-medium uppercase tracking-wider transition-all duration-200 pb-0.5 border-b-[3px] ${
-                  isActive(link.href)
-                    ? "text-[#090860] border-[#090860]"
-                    : "text-gray-600 border-transparent hover:text-gray-900 hover:border-[#090860]"
+                className={`text-[10px] uppercase tracking-[0.15em] transition-colors duration-200 ${
+                  isActive(link.href) ? textColor : `${inactiveColor} ${hoverColor}`
                 }`}
               >
                 {link.label}
@@ -98,9 +106,9 @@ export default function Navbar() {
         {/* Mobile logo - Centered */}
         <Link
           href="/"
-          className="md:hidden absolute left-1/2 transform -translate-x-1/2 text-xl font-bold tracking-tighter text-[#090860] transition-opacity duration-200"
+          className={`md:hidden absolute left-1/2 transform -translate-x-1/2 text-sm font-light tracking-tight ${textColor} transition-colors duration-200`}
         >
-          Vadmin Thevelin
+          Vadim Thevelin
         </Link>
 
         {/* Spacer for mobile to balance the layout */}
@@ -123,10 +131,10 @@ export default function Navbar() {
               key={link.href}
               href={link.href}
               onClick={() => setIsOpen(false)}
-              className={`text-2xl font-black uppercase tracking-tight transition-colors duration-200 text-center ${
+              className={`text-xl font-light uppercase tracking-wide transition-colors duration-200 text-center ${
                 isActive(link.href)
-                  ? "text-[#090860]"
-                  : "text-black hover:text-zinc-500"
+                  ? "text-black"
+                  : "text-black/60 hover:text-black"
               }`}
             >
               {link.label}

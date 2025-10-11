@@ -8,6 +8,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  font-family: "Acid", sans-serif !important;
 }
 
 @theme inline {
