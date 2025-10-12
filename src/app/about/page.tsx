@@ -209,7 +209,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-20 px-4 md:px-6">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-xl md:text-2xl lg:text-3xl font-light uppercase tracking-[0.15em] md:tracking-[0.2em] text-black mb-4 md:mb-6">
-              Let's Work Together
+              Let&apos;s Work Together
             </h2>
             <p className="text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.2em] text-gray-500 mb-6 md:mb-8 font-light">
               Available for projects worldwide
