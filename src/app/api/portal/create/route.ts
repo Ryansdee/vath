@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     console.log("Portal created with ID:", portalRef.id);
 
     const portalId = portalRef.id;
-    const portalUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/portal/${portalId}`;
+    const portalUrl = `https://vath-portofolio.netlify.app/portal/${portalId}`;
 
     // Envoyer l'email au client avec le lien du portail
     await transporter.sendMail({
