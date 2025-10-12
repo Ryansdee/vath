@@ -12,7 +12,23 @@ import {
 } from "firebase/auth";
 
 // Récupérer les emails autorisés depuis .env
-const ALLOWED_EMAILS = process.env.NEXT_PUBLIC_ALLOWED_EMAILS?.split(',').map(email => email.trim()) || [];
+const getAllowedEmails = () => {
+  const emailsString = process.env.NEXT_PUBLIC_ALLOWED_EMAILS;
+  if (!emailsString) {
+    console.warn('NEXT_PUBLIC_ALLOWED_EMAILS not found in environment');
+    return [];
+  }
+  
+  const emails = emailsString
+    .split(',')
+    .map(email => email.trim())
+    .filter(email => email.length > 0);
+  
+  console.log('Allowed emails:', emails);
+  return emails;
+};
+
+const ALLOWED_EMAILS = getAllowedEmails();
 
 export default function AdminLayout({
   children,
@@ -67,18 +83,27 @@ export default function AdminLayout({
     e.preventDefault();
     setEmailError("");
 
-    if (!emailInput.trim()) {
+    const trimmedEmail = emailInput.trim().toLowerCase();
+
+    if (!trimmedEmail) {
       setEmailError("Please enter an email address");
       return;
     }
 
-    if (!ALLOWED_EMAILS.includes(emailInput.trim())) {
+    console.log('Checking email:', trimmedEmail);
+    console.log('Against allowed emails:', ALLOWED_EMAILS);
+
+    const normalizedAllowedEmails = ALLOWED_EMAILS.map(email => email.toLowerCase());
+    
+    if (!normalizedAllowedEmails.includes(trimmedEmail)) {
       setEmailError("This email is not authorized");
+      console.log('Email not found in allowed list');
       return;
     }
 
+    console.log('Email authorized!');
     // Sauvegarder l'email et autoriser l'accès
-    localStorage.setItem('admin_email', emailInput.trim());
+    localStorage.setItem('admin_email', trimmedEmail);
     setIsAuthorized(true);
   };
 
