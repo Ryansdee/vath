@@ -11,21 +11,29 @@ import {
   User 
 } from "firebase/auth";
 
-// Récupérer les emails autorisés depuis .env
+// Récupérer les emails autorisés depuis .env OU hardcodé en fallback
 const getAllowedEmails = () => {
+  // Essayer d'abord depuis l'env
   const emailsString = process.env.NEXT_PUBLIC_ALLOWED_EMAILS;
-  if (!emailsString) {
-    console.warn('NEXT_PUBLIC_ALLOWED_EMAILS not found in environment');
-    return [];
+  
+  if (emailsString) {
+    const emails = emailsString
+      .split(',')
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
+    
+    console.log('Allowed emails from env:', emails);
+    return emails;
   }
   
-  const emails = emailsString
-    .split(',')
-    .map(email => email.trim())
-    .filter(email => email.length > 0);
+  // Fallback : liste hardcodée (à modifier selon vos besoins)
+  const fallbackEmails = [
+    'ryan.deschuyteneer@gmail.com',
+    // Ajoutez d'autres emails ici si nécessaire
+  ];
   
-  console.log('Allowed emails:', emails);
-  return emails;
+  console.warn('NEXT_PUBLIC_ALLOWED_EMAILS not found, using fallback:', fallbackEmails);
+  return fallbackEmails;
 };
 
 const ALLOWED_EMAILS = getAllowedEmails();
@@ -44,24 +52,23 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
+    // Vérifier d'abord le localStorage avant Firebase Auth
+    const savedEmail = localStorage.getItem('admin_email');
+    if (savedEmail && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(savedEmail.toLowerCase())) {
+      setIsAuthorized(true);
+      setLoading(false);
+      return;
+    }
+
+    // Sinon vérifier Firebase Auth
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setIsAuthorized(
-        currentUser ? ALLOWED_EMAILS.includes(currentUser.email || "") : false
-      );
+      const authorized = currentUser ? ALLOWED_EMAILS.includes(currentUser.email || "") : false;
+      setIsAuthorized(authorized);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
-
-  // Vérifier si l'email est dans la liste autorisée (pour auth sans mdp)
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('admin_email');
-    if (savedEmail && ALLOWED_EMAILS.includes(savedEmail)) {
-      setIsAuthorized(true);
-      setLoading(false);
-    }
   }, []);
 
   const handleGoogleSignIn = async () => {
