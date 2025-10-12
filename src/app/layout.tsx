@@ -2,27 +2,30 @@ import "./globals.css";
 import { ReactNode } from "react";
 import { Metadata, Viewport } from "next";
 import { Providers } from "./providers";
-import Navbar from "@/app/components/Navbar";
-import Footer from "@/app/components/Footer";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 
 // Métadonnées SEO optimales
 export const metadata: Metadata = {
-  metadataBase: new URL('https://vath-portofolio.netlify.app'), // Remplacez par votre vraie URL
+  metadataBase: new URL('https://vadimthevelin.com'), // Remplacez par votre vraie URL
   title: {
-    default: "Vadim Thevelin - Photography Portfolio",
+    default: "Vadim Thevelin - Photographer, Videographer & Director",
     template: "%s | Vadim Thevelin"
   },
   description:
-    "Portfolio of Vadim Thevelin, photographer and videographer based in France. Explore stunning visuals and creative projects.",
+    "Portfolio of Vadim Thevelin, photographer, videographer and director based in Brussels. Explore stunning visuals and creative projects.",
   keywords: [
     "photography",
     "videography",
+    "director",
     "portfolio",
     "photographer",
-    "France",
+    "Brussels",
+    "Belgium",
     "Vadim Thevelin",
     "creative photography",
-    "visual arts"
+    "visual arts",
+    "Main d'Oeuvre"
   ],
   authors: [{ name: "Vadim Thevelin" }],
   creator: "Vadim Thevelin",
@@ -31,11 +34,11 @@ export const metadata: Metadata = {
   // Open Graph (Facebook, LinkedIn)
   openGraph: {
     type: "website",
-    locale: "fr_FR",
-    url: "https://vath-portofolio.netlify.app",
+    locale: "en_US",
+    url: "https://vadimthevelin.com",
     siteName: "Vadim Thevelin Photography",
-    title: "Vadim Thevelin - Photography Portfolio",
-    description: "Portfolio of Vadim Thevelin, photographer and videographer based in France.",
+    title: "Vadim Thevelin - Photographer, Videographer & Director",
+    description: "Portfolio of Vadim Thevelin, photographer, videographer and director based in Brussels.",
     images: [
       {
         url: "/og-image.jpg", // Créez une image 1200x630px
@@ -49,10 +52,10 @@ export const metadata: Metadata = {
   // Twitter
   twitter: {
     card: "summary_large_image",
-    title: "Vadim Thevelin - Photography Portfolio",
-    description: "Portfolio of Vadim Thevelin, photographer and videographer based in France.",
+    title: "Vadim Thevelin - Photographer, Videographer & Director",
+    description: "Portfolio of Vadim Thevelin, photographer, videographer and director based in Brussels.",
     images: ["/og-image.jpg"],
-    creator: "@vadimthevelin" // Remplacez par votre handle Twitter
+    creator: "@vadimthevelin"
   },
   
   // Robots
@@ -70,7 +73,7 @@ export const metadata: Metadata = {
   
   // Vérification
   verification: {
-    google: "votre-code-google", // Ajoutez votre code de vérification Google
+    google: "votre-code-google", // Ajoutez votre code de vérification Google Search Console
     // yandex: "votre-code-yandex",
     // bing: "votre-code-bing"
   },
@@ -88,7 +91,7 @@ export const metadata: Metadata = {
       {
         rel: "mask-icon",
         url: "/safari-pinned-tab.svg",
-        color: "#090860"
+        color: "#000000"
       }
     ]
   },
@@ -99,7 +102,7 @@ export const metadata: Metadata = {
   // Autres métadonnées
   category: "photography",
   alternates: {
-    canonical: "https://vath-portofolio.netlify.app",
+    canonical: "https://vadimthevelin.com",
   }
 };
 
@@ -115,15 +118,18 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Preconnect pour améliorer les performances */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://firebasestorage.googleapis.com" />
         
         {/* DNS Prefetch pour les ressources externes */}
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com" />
         
         {/* Structured Data (JSON-LD) pour le SEO */}
         <script
@@ -133,24 +139,24 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               "@context": "https://schema.org",
               "@type": "Person",
               "name": "Vadim Thevelin",
-              "url": "https://vath-portofolio.netlify.app",
-              "image": "https://vath-portofolio.netlify.app/profile.jpg",
-              "jobTitle": "Photographer & Videographer",
-              "description": "Professional photographer and videographer based in France",
+              "url": "https://vadimthevelin.com",
+              "image": "https://vadimthevelin.com/profile.jpg",
+              "jobTitle": "Photographer, Videographer & Director",
+              "description": "Professional photographer, videographer and director based in Brussels, Belgium",
               "address": {
                 "@type": "PostalAddress",
-                "addressCountry": "France"
+                "addressLocality": "Brussels",
+                "addressCountry": "Belgium"
               },
               "sameAs": [
                 "https://instagram.com/vadimthevelin",
-                "https://twitter.com/vadimthevelin",
-                // Ajoutez vos autres réseaux sociaux
+                "https://instagram.com/maindoeuvre.productions"
               ]
             })
           }}
         />
       </head>
-      <body className="bg-white text-gray-900 transition-colors duration-300 dark:bg-black dark:text-gray-100 antialiased">
+      <body className="bg-white text-gray-900 antialiased">
         <Providers>
           <Navbar />
           <main className="min-h-screen" id="main-content">

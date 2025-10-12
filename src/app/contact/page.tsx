@@ -1,14 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+type ServiceType = "photography" | "videography" | "direction" | "general";
+
+interface FormData {
+  name: string;
+  email: string;
+  service: ServiceType | null;
+  additionalInfo: string;
+}
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<FormData>({
+    name: "",
+    email: "",
+    service: null,
+    additionalInfo: ""
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const services = [
+    { id: "photography" as ServiceType, label: "Photography", icon: "📸" },
+    { id: "videography" as ServiceType, label: "Videography", icon: "🎬" },
+    { id: "direction" as ServiceType, label: "Direction", icon: "🎨" },
+    { id: "general" as ServiceType, label: "General Inquiry", icon: "💬" },
+    { id: "portal" as ServiceType, label: "Portal Access", icon: "🔐" }
+  ];
+
+  const handleServiceSelect = (serviceId: ServiceType) => {
+    setForm({ ...form, service: serviceId });
+    setStep(2);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,7 +54,8 @@ export default function ContactPage() {
 
       if (response.ok) {
         setStatus("success");
-        setForm({ name: "", email: "", message: "" });
+        // Redirection vers la page de succès
+        router.push("/success");
       } else {
         setStatus("error");
       }
@@ -40,159 +68,212 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="pt-32 pb-16 px-6 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto animate-fade-in text-center">
-          <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
-            Contact
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Let&apos;s discuss your project
-          </p>
-        </div>
-      </header>
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
+        
+        * {
+          font-family: 'Acid Grotesk', sans-serif;
+        }
+      `}</style>
 
-      {/* Content */}
-      <main className="px-6 py-2 bg-white" style={{ paddingBottom: "10vh" }}>
-        <div className="max-w-3xl mx-auto">
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in-up">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your name
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder="John Doe"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
-                required
-                disabled={isSubmitting}
-              />
+      <div className="min-h-screen bg-white">
+        {/* Header */}
+        <header className="pt-32 pb-16 px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl font-light uppercase tracking-[0.2em] text-black mb-4">
+              Contact
+            </h1>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
+              Let's discuss your project
+            </p>
+          </div>
+        </header>
+
+        {/* Progress Indicator */}
+        <div className="max-w-3xl mx-auto px-6 mb-12">
+          <div className="flex items-center justify-center gap-4">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-light ${step >= 1 ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-300'}`}>
+              1
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your email
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder="john.doe@example.com"
-                value={form.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
-                required
-                disabled={isSubmitting}
-              />
+            <div className={`h-0.5 w-12 ${step >= 2 ? 'bg-black' : 'bg-gray-300'}`}></div>
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-light ${step >= 2 ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-300'}`}>
+              2
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your message
-              </label>
-              <textarea
-                name="message"
-                placeholder="Tell me about your project..."
-                value={form.message}
-                onChange={handleChange}
-                rows={6}
-                className="w-full px-4 py-3 border text-gray-900 border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors resize-none"
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Status messages */}
-            {status === "success" && (
-              <div className="p-4 bg-green-50 border border-green-200 text-green-800 text-sm">
-                Thank you for your message! I&apos;ll get back to you soon.
-              </div>
-            )}
-
-            {status === "error" && (
-              <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-sm">
-                An error occurred. Please try again or contact me directly via Instagram.
-              </div>
-            )}
-
-            {/* Submit button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-black text-white py-4 font-semibold transition-all duration-200 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full"></span>
-                  Sending...
-                </span>
-              ) : (
-                "Send message"
-              )}
-            </button>
-          </form>
-
-          {/* Alternative contact */}
-          <div className="mt-16 pt-16 border-t border-gray-200">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-black mb-2">
-                Or reach out directly
-              </h2>
-              <p className="text-gray-600">
-                Connect with me on social media
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://www.instagram.com/vadimthevelin/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-black text-white font-semibold transition-all duration-200 hover:bg-gray-800"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                </svg>
-                @vadimthevelin
-              </a>
-
-              <a
-                href="https://www.instagram.com/maindoeuvre.productions/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-black text-black font-semibold transition-all duration-200 hover:bg-black hover:text-white"
-              >
-                @maindoeuvre.productions
-              </a>
+            <div className={`h-0.5 w-12 ${step >= 3 ? 'bg-black' : 'bg-gray-300'}`}></div>
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 text-xs font-light ${step >= 3 ? 'border-black bg-black text-white' : 'border-gray-300 text-gray-300'}`}>
+              3
             </div>
           </div>
         </div>
-      </main>
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-          opacity: 0;
-        }
-      `}</style>
-    </div>
+        {/* Content */}
+        <main className="px-6 pb-20">
+          <div className="max-w-3xl mx-auto">
+            {/* Step 1: Service Selection */}
+            {step === 1 && (
+              <div className="space-y-8">
+                <h2 className="text-xl font-light uppercase tracking-[0.15em] text-black text-center mb-8">
+                  What can I help you with?
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {services.map((service) => (
+                    <button
+                      key={service.id}
+                      onClick={() => handleServiceSelect(service.id)}
+                      className="p-8 border border-gray-300 hover:border-black hover:bg-gray-50 transition-all duration-300 text-center group"
+                    >
+                      <div className="text-4xl mb-4">{service.icon}</div>
+                      <h3 className="text-sm uppercase tracking-[0.15em] font-light group-hover:text-black transition-colors">
+                        {service.label}
+                      </h3>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Contact Info */}
+            {step === 2 && (
+              <div className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-2">
+                    Your Information
+                  </h2>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                    Selected: {services.find(s => s.id === form.service)?.label}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-[0.15em] font-light text-gray-700 mb-2">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors text-sm"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-[0.15em] font-light text-gray-700 mb-2">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors text-sm"
+                    placeholder="john.doe@example.com"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 text-xs uppercase tracking-[0.15em] font-light hover:border-black hover:text-black transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => form.name && form.email && setStep(3)}
+                    disabled={!form.name || !form.email}
+                    className="flex-1 px-6 py-3 bg-black text-white text-xs uppercase tracking-[0.15em] font-light hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Additional Info & Submit */}
+            {step === 3 && (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-2">
+                    Additional Information
+                  </h2>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                    Optional details about your project
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-[0.15em] font-light text-gray-700 mb-2">
+                    Tell me about your project (Optional)
+                  </label>
+                  <textarea
+                    value={form.additionalInfo}
+                    onChange={(e) => setForm({ ...form, additionalInfo: e.target.value })}
+                    rows={6}
+                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors resize-none text-sm"
+                    placeholder="Budget, timeline, specific needs..."
+                  />
+                </div>
+
+                {/* Status messages */}
+                {status === "success" && (
+                  <div className="p-4 border border-black bg-gray-50 text-black text-xs uppercase tracking-wider text-center">
+                    Message sent successfully! Check your email.
+                  </div>
+                )}
+
+                {status === "error" && (
+                  <div className="p-4 border border-red-500 bg-red-50 text-red-800 text-xs uppercase tracking-wider text-center">
+                    Error sending message. Please try again.
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 text-xs uppercase tracking-[0.15em] font-light hover:border-black hover:text-black transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-6 py-3 bg-black text-white text-xs uppercase tracking-[0.15em] font-light hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full"></span>
+                        Sending...
+                      </span>
+                    ) : (
+                      "Send Request"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Alternative contact */}
+            <div className="mt-16 pt-16 border-t border-gray-200 text-center">
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">
+                Or reach out directly
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="https://www.instagram.com/maindoeuvre.productions/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 border border-black text-black text-xs uppercase tracking-[0.15em] font-light hover:bg-black hover:text-white transition-all"
+                >
+                  @maindoeuvre.productions
+                </a>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

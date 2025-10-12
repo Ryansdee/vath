@@ -12,15 +12,9 @@ interface FileWithPreview {
   preview: string;
 }
 
-type Category = "photo" | "video" | "personal-project" | "blog";
+type Category = "photo" | "video" | "diary" | "blog";
 
-export default function AdminPage() {
-  // --- Protection par code ---
-  const [accessGranted, setAccessGranted] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const adminCode = process.env.NEXT_PUBLIC_ADMIN_CODE;
-
-  // --- États du formulaire ---
+export default function AdminUploadPage() {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
@@ -31,21 +25,10 @@ export default function AdminPage() {
   const categories: { value: Category; label: string; icon: string }[] = [
     { value: "photo", label: "Photo", icon: "📸" },
     { value: "video", label: "Video", icon: "🎥" },
-    { value: "personal-project", label: "Personal Project", icon: "🚀" },
+    { value: "diary", label: "Diary", icon: "🚀" },
     { value: "blog", label: "Blog", icon: "✍️" }
   ];
 
-  // --- Vérification du code ---
-  const handleAccess = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputCode === adminCode) {
-      setAccessGranted(true);
-    } else {
-      alert("Code incorrect ❌");
-    }
-  };
-
-  // --- Upload logic ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     selectedFiles.forEach((file) => {
@@ -117,56 +100,37 @@ export default function AdminPage() {
     }
   };
 
-  // --- Si le code n'est pas encore validé ---
-  if (!accessGranted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <form
-          onSubmit={handleAccess}
-          className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm text-center"
-        >
-          <h1 className="text-2xl font-bold mb-4 text-gray-900">Admin Access</h1>
-          <input
-            type="password"
-            placeholder="Enter access code"
-            value={inputCode}
-            onChange={(e) => setInputCode(e.target.value)}
-            className="w-full px-4 py-3 border text-gray-900 border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-black"
-          />
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
-          >
-            Access
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  // --- Page admin complète ---
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="pt-32 pb-16 px-6 border-b border-gray-100">
         <div className="max-w-4xl mx-auto animate-fade-in text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
-            Admin
+            Upload Content
           </h1>
           <p className="text-gray-500 text-sm">
             High quality upload • No compression
           </p>
           
-          {/* Bouton vers la gestion des textes */}
-          <div className="mt-8">
+          {/* Navigation */}
+          <div className="mt-8 flex gap-4 justify-center">
+            <Link 
+              href="/admin/portal"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 font-medium hover:border-black transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              Client Portals
+            </Link>
             <Link 
               href="/admin/texts"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 font-medium hover:border-black transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              Manage Tag Texts
+              Manage Texts
             </Link>
           </div>
         </div>
@@ -291,7 +255,7 @@ export default function AdminPage() {
                 placeholder="Describe your content..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-colors"
                 disabled={uploading}
               />
             </div>
@@ -306,7 +270,7 @@ export default function AdminPage() {
                 placeholder="FWP, DAMSO, portrait..."
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 focus:border-[#090860] focus:ring-1 focus:ring-[#090860] outline-none transition-colors"
+                className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-colors"
                 required
                 disabled={uploading}
               />
@@ -320,7 +284,7 @@ export default function AdminPage() {
               <div className="space-y-2">
                 <div className="w-full h-2 bg-gray-200 overflow-hidden">
                   <div 
-                    className="h-full bg-[#090860] transition-all duration-300"
+                    className="h-full bg-black transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>

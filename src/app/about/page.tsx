@@ -1,180 +1,228 @@
 "use client";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function AboutPage() {
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="pt-32 pb-16 px-6 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
-            About
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Visual creator & storyteller
-          </p>
-        </div>
-      </header>
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Images de vous au travail
+  const workImages = [
+    "/work-1.jpg",
+    "/logo.jpg",
+    "/work-2.jpg"
+  ];
 
-      {/* Content */}
-      <main className="px-6 py-16">
-        <div className="max-w-4xl mx-auto space-y-16">
-          {/* Bio Section */}
-          <section className="animate-fade-in-up">
-            <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-8">
-              {/* Image */}
-              <div className="flex-shrink-0">
-                <div className="relative w-48 h-48 md:w-56 md:h-56 mx-auto md:mx-0 border-rounded">
+  // Changer d'image toutes les 4 secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % workImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [workImages.length]);
+
+  return (
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
+        
+        * {
+          font-family: 'Acid Grotesk', sans-serif;
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease-out;
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-white">
+        {/* Hero Section with Images */}
+        <section className="pt-20 md:pt-24 pb-12 md:pb-16 px-4 md:px-6">
+          <div className="max-w-6xl mx-auto">
+            
+            {/* Mobile: Single Image Carousel */}
+            <div className="md:hidden mb-12">
+              <div className="relative aspect-[3/4] bg-black overflow-hidden">
+                {workImages.map((img, index) => (
                   <Image
-                    src="/logo.jpg"
-                    alt="Vadim Thevelin"
-                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-300 border-rounded"
-                    width={300}
-                    height={300}
-                    style={{ borderRadius: '.5em' }}
+                    key={index}
+                    src={img}
+                    alt={`Vadim Thevelin at work ${index + 1}`}
+                    fill
+                    className={`object-cover transition-opacity duration-1000 ${
+                      index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    sizes="100vw"
+                    quality={90}
+                    priority={index === 0}
+                  />
+                ))}
+                
+                {/* Dots Indicator */}
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                  {workImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === currentImageIndex 
+                          ? 'bg-white w-6' 
+                          : 'bg-white/50'
+                      }`}
+                      aria-label={`View image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop: Image Grid */}
+            <div className="hidden md:grid grid-cols-3 gap-4 mb-16 animate-fadeIn">
+              {workImages.map((img, index) => (
+                <div 
+                  key={index}
+                  className="relative aspect-[3/4] bg-black overflow-hidden"
+                >
+                  <Image
+                    src={img}
+                    alt={`Vadim Thevelin at work ${index + 1}`}
+                    fill
+                    className="object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                    sizes="33vw"
+                    quality={90}
+                    priority={index === 0}
                   />
                 </div>
-              </div>
-
-              {/* Text */}
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-6">
-                  <h2 className="text-2xl md:text-3xl font-bold text-black tracking-tight">
-                    Vadim Thevelin
-                  </h2>
-                  <a
-                    href="https://www.instagram.com/vadimthevelin/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-gray-500 hover:text-[#090860] transition-colors"
-                  >
-                    @vadimthevelin
-                  </a>
-                </div>
-
-                <div className="space-y-6 text-gray-700 leading-relaxed">
-                  <p className="text-lg md:text-xl text-black font-medium">
-                    Photographer • Director • Videographer
-                  </p>
-
-                  <p>
-                    I&apos;m a visual creator passionate about capturing the essence of moments through 
-                    photography, direction, and videography. Each project is an opportunity to tell 
-                    a unique story and create images that resonate with authenticity and emotion.
-                  </p>
-
-                  <p>
-                    My approach combines professional technique with artistic sensitivity to transform 
-                    your visions into impactful and memorable visual content.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
-          </section>
 
-          {/* Services Section */}
-          <section className="animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-            <h2 className="text-2xl md:text-3xl font-bold text-black mb-8 tracking-tight">
-              Services
-            </h2>
-
-            <div className="space-y-8">
-              <div className="group">
-                <h3 className="text-xl font-bold text-black mb-2 group-hover:text-[#090860] transition-colors">
-                  Photography
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Portraits, events, products and custom creative projects
+            {/* Text Content */}
+            <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 animate-fadeIn">
+              
+              {/* Name & Title */}
+              <div className="text-center mb-8 md:mb-12">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-light uppercase tracking-[0.15em] md:tracking-[0.2em] text-black mb-3 md:mb-4">
+                  Vadim Thevelin
+                </h1>
+                <p className="text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.3em] text-gray-500">
+                  Photographer • Videographer • Director
                 </p>
               </div>
 
-              <div className="group">
-                <h3 className="text-xl font-bold text-black mb-2 group-hover:text-[#090860] transition-colors">
-                  Direction
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Artistic direction and visual design for audiovisual projects
+              {/* Bio Text */}
+              <div className="text-center space-y-4 md:space-y-6 px-2">
+                <p className="text-xs md:text-sm lg:text-base leading-relaxed text-gray-700 font-light">
+                  I'm Vadim Thevelin, a photographer, videographer, and director based in Brussels, 
+                  available for projects worldwide. My work is driven by a passion for creating bold, 
+                  meaningful visuals that connect people and ideas.
+                </p>
+
+                <p className="text-xs md:text-sm lg:text-base leading-relaxed text-gray-700 font-light">
+                  I believe every project is a collaboration — a space where vision, trust, and 
+                  creativity come together. Whether I'm behind the camera or leading a team, my goal 
+                  is always the same: to craft images and films that inspire, empower, and leave a 
+                  lasting impression.
                 </p>
               </div>
 
-              <div className="group">
-                <h3 className="text-xl font-bold text-black mb-2 group-hover:text-[#090860] transition-colors">
-                  Videography
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Video production, editing and professional post-production
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section className="animate-fade-in-up bg-gray-50 border-rounded -mx-6 px-6 py-16 md:-mx-0 md:px-12" style={{ animationDelay: "200ms" }}>
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-black mb-6 tracking-tight">
-                Let&apos;s work together
-              </h2>
-
-              <p className="text-gray-600 mb-10 leading-relaxed">
-                For any collaboration request, feel free to contact me by email or check out{" "}
-                <a
-                  href="https://www.instagram.com/maindoeuvre.productions/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#090860] font-semibold hover:underline"
-                >
-                  @maindoeuvre.productions
-                </a>
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              {/* Social Links */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 pt-6 md:pt-8">
                 <a
                   href="https://www.instagram.com/vadimthevelin/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold transition-all duration-200 hover:bg-gray-800"
+                  className="text-[10px] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-black hover:text-gray-500 transition-colors font-light"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                  </svg>
                   Instagram
                 </a>
-
+                <span className="hidden sm:inline text-gray-300">|</span>
                 <a
+                  href="https://www.instagram.com/maindoeuvre.productions/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-black hover:text-gray-500 transition-colors font-light"
+                >
+                  Main d'Oeuvre
+                </a>
+                <span className="hidden sm:inline text-gray-300">|</span>
+                <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 px-6 py-3 border-2 border-black text-black font-semibold transition-all duration-200 hover:bg-black hover:text-white"
+                  className="text-[10px] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-black hover:text-gray-500 transition-colors font-light"
                 >
                   Contact
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
+                </Link>
               </div>
             </div>
-          </section>
-        </div>
-      </main>
+          </div>
+        </section>
 
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-          opacity: 0;
-        }
-      `}</style>
-    </div>
+        {/* Services Section */}
+        <section className="py-12 md:py-16 px-4 md:px-6 bg-gray-50">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-light uppercase tracking-[0.15em] md:tracking-[0.2em] text-black mb-8 md:mb-12 text-center">
+              Services
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+              <div className="text-center group p-4 md:p-0">
+                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
+                  Photography
+                </h3>
+                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
+                  Portraits, events, products and custom creative projects
+                </p>
+              </div>
+
+              <div className="text-center group p-4 md:p-0">
+                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
+                  Videography
+                </h3>
+                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
+                  Video production, editing and professional post-production
+                </p>
+              </div>
+
+              <div className="text-center group p-4 md:p-0">
+                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
+                  Direction
+                </h3>
+                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
+                  Artistic direction and visual design for audiovisual projects
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-16 md:py-20 px-4 md:px-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-xl md:text-2xl lg:text-3xl font-light uppercase tracking-[0.15em] md:tracking-[0.2em] text-black mb-4 md:mb-6">
+              Let's Work Together
+            </h2>
+            <p className="text-[10px] md:text-xs uppercase tracking-[0.2em] md:tracking-[0.2em] text-gray-500 mb-6 md:mb-8 font-light">
+              Available for projects worldwide
+            </p>
+            <Link
+              href="/contact"
+              className="inline-block px-6 md:px-8 py-2.5 md:py-3 border border-black text-black text-[10px] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] hover:bg-black hover:text-white transition-all duration-300 font-light"
+            >
+              Get in Touch
+            </Link>
+          </div>
+        </section>
+      </div>
+    </>
   );
 }

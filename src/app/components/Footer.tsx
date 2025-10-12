@@ -99,7 +99,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="flex justify-center mt-8 text-[10px] text-gray-500 italic font-light">
-            made by <a href="https://ryansdee.netlify.app/" className="underline underline-offset-2 ml-1">Ryansdee</a> 
+            made by <a target="_blank" href="https://ryansdee.netlify.app/" className="underline underline-offset-2 ml-1">Ryansdee</a> 
           </div>
         </div>
       </footer>

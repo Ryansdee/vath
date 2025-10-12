@@ -184,7 +184,7 @@ export default function PhotosPage() {
                       />
                       
                       {/* Overlay with text */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center hover:bg-black/20 z-10 p-4 transition-colors duration-300">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center hover:bg-black/60 z-10 p-4 transition-colors duration-300">
                         <div className="collection-text text-center">
                           <h3 
                             className="text-sm md:text-base font-light uppercase text-white mb-1 tracking-tight"

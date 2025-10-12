@@ -43,10 +43,10 @@ export default function VideosPage() {
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
           <div className="relative w-16 h-16">
-            <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-[#090860] border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-[#090860] text-sm font-semibold uppercase tracking-wider">
+          <p className="text-black text-sm font-light uppercase tracking-wider">
             Loading...
           </p>
         </div>
@@ -55,93 +55,165 @@ export default function VideosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="pt-32 pb-16 px-6 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold uppercase text-black mb-3 tracking-tight">
-            Videos
-          </h1>
-          <p className="text-gray-500 text-sm">
-            {videos.length} {videos.length > 1 ? "videos" : "video"}
-          </p>
-        </div>
-      </header>
-
-      {/* Grid */}
-      <main className="px-6 py-16">
-        <div className="max-w-7xl mx-auto">
-          {videos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {videos.map((video, index) => (
-                <div
-                  key={video.id}
-                  onClick={() => setSelectedVideo(video)}
-                  className="group cursor-pointer animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="relative aspect-video bg-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1">
-                    <Image
-                      src={video.thumbnail}
-                      alt={video.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      quality={85}
-                    />
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                        <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[16px] border-l-[#090860] border-b-[10px] border-b-transparent ml-1"></div>
+    <>
+      <style jsx global>{`
+        @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
+        
+        * {
+          font-family: 'Acid Grotesk', sans-serif;
+        }
+        
+        .collection-card {
+          position: relative;
+          overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .collection-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            135deg,
+            transparent 0%,
+            rgba(0, 0, 0, 0.1) 50%,
+            rgba(0, 0, 0, 0.3) 100%
+          );
+          opacity: 0;
+          transition: opacity 0.4s ease;
+          z-index: 1;
+        }
+        
+        .collection-card:hover::before {
+          opacity: 1;
+        }
+        
+        .collection-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .collection-image {
+          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .collection-card:hover .collection-image {
+          transform: scale(1.08);
+        }
+        
+        .collection-text {
+          transform: translateY(8px);
+          opacity: 0;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .collection-card:hover .collection-text {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .fade-in {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-white pt-24 pb-16">
+        <main className="px-4 md:px-6">
+          <div className="max-w-7xl mx-auto">
+            {videos.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                {videos.map((video, index) => (
+                  <div
+                    key={video.id}
+                    onClick={() => setSelectedVideo(video)}
+                    className="collection-card fade-in cursor-pointer"
+                    style={{ 
+                      animationDelay: `${index * 0.08}s`,
+                      aspectRatio: '16/9'
+                    }}
+                  >
+                    <div className="relative w-full h-full bg-black">
+                      {/* Image */}
+                      <Image
+                        src={video.thumbnail}
+                        alt={video.title}
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="collection-image object-cover"
+                        quality={85}
+                        priority={index < 8}
+                      />
+                      
+                      {/* Overlay with text and play button */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center hover:bg-black/60 z-10 p-4 transition-colors duration-300">
+                        <div className="collection-text text-center">
+                          {/* Play button */}
+                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-white flex items-center justify-center mx-auto mb-4 backdrop-blur-sm bg-white/10">
+                            <div className="w-0 h-0 border-t-[8px] md:border-t-[10px] border-t-transparent border-l-[12px] md:border-l-[16px] border-l-white border-b-[8px] md:border-b-[10px] border-b-transparent ml-1"></div>
+                          </div>
+                          
+                          <h3 
+                            className="text-sm md:text-base font-light uppercase text-white mb-1 tracking-tight"
+                            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
+                          >
+                            {video.title}
+                          </h3>
+                          
+                          {video.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 justify-center">
+                              {video.tags.slice(0, 2).map((tag, i) => (
+                                <span
+                                  key={i}
+                                  className="text-[10px] text-white/80 uppercase tracking-wider font-light"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#090860] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                   </div>
-                  <div className="mt-4">
-                    <h3 className="text-lg md:text-xl font-bold text-black mb-2 tracking-tight group-hover:text-[#090860] transition-colors">
-                      {video.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                      {video.description}
-                    </p>
-                    {video.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {video.tags.slice(0, 3).map((tag, i) => (
-                          <span
-                            key={i}
-                            className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-32">
-              <p className="text-gray-400 text-sm">No videos available</p>
-            </div>
-          )}
-        </div>
-      </main>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24">
+                <p className="text-gray-400 text-base uppercase tracking-wider text-center font-light">
+                  No videos available
+                </p>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Modal Video */}
       {selectedVideo && (
         <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedVideo(null)}
         >
           <button
-            className="absolute top-6 right-6 text-white text-4xl font-light hover:rotate-90 transition-transform duration-300 z-10"
+            className="absolute top-8 right-8 text-white text-3xl font-light hover:text-gray-400 transition-colors z-10"
             onClick={() => setSelectedVideo(null)}
             aria-label="Close"
           >
             ×
           </button>
           <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
-            <div className="aspect-video bg-black shadow-2xl overflow-hidden">
+            <div className="aspect-video bg-black overflow-hidden">
               <iframe
                 src={selectedVideo.url}
                 className="w-full h-full"
@@ -150,19 +222,19 @@ export default function VideosPage() {
                 title={selectedVideo.title}
               />
             </div>
-            <div className="mt-6 text-center px-4">
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-tight">
+            <div className="mt-8 text-center px-4">
+              <h3 className="text-xl font-light uppercase text-white mb-3 tracking-tight">
                 {selectedVideo.title}
               </h3>
-              <p className="text-gray-400 text-sm md:text-base max-w-3xl mx-auto">
+              <p className="text-gray-400 text-sm font-light max-w-3xl mx-auto">
                 {selectedVideo.description}
               </p>
               {selectedVideo.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 justify-center mt-4">
+                <div className="flex flex-wrap gap-3 justify-center mt-6">
                   {selectedVideo.tags.map((tag, i) => (
                     <span
                       key={i}
-                      className="text-xs text-gray-400 px-3 py-1 bg-white/10 rounded-full"
+                      className="text-[10px] text-gray-500 uppercase tracking-wider font-light"
                     >
                       {tag}
                     </span>
@@ -173,27 +245,6 @@ export default function VideosPage() {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.6s ease-out forwards;
-          opacity: 0;
-        }
-      `}</style>
-    </div>
+    </>
   );
 }

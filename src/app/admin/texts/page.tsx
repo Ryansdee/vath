@@ -24,10 +24,6 @@ interface TagText {
 }
 
 export default function AdminTextsPage() {
-  const [accessGranted, setAccessGranted] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const adminCode = process.env.NEXT_PUBLIC_ADMIN_CODE;
-
   const [tagTexts, setTagTexts] = useState<TagText[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,22 +34,10 @@ export default function AdminTextsPage() {
     content: ""
   });
 
-  // Vérification du code
-  const handleAccess = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputCode === adminCode) {
-      setAccessGranted(true);
-    } else {
-      alert("Code incorrect ❌");
-    }
-  };
-
   // Charger les textes
   useEffect(() => {
-    if (accessGranted) {
-      fetchTagTexts();
-    }
-  }, [accessGranted]);
+    fetchTagTexts();
+  }, []);
 
   const fetchTagTexts = async () => {
     try {
@@ -139,32 +123,6 @@ export default function AdminTextsPage() {
     setFormData({ tag: "", title: "", content: "" });
     setEditingId(null);
   };
-
-  if (!accessGranted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <form
-          onSubmit={handleAccess}
-          className="bg-white p-8 rounded-2xl shadow-md w-full max-w-sm text-center"
-        >
-          <h1 className="text-2xl font-bold mb-4 text-gray-900">Admin Access</h1>
-          <input
-            type="password"
-            placeholder="Enter access code"
-            value={inputCode}
-            onChange={(e) => setInputCode(e.target.value)}
-            className="w-full px-4 py-3 border text-gray-900 border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-black"
-          />
-          <button
-            type="submit"
-            className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
-          >
-            Access
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white">

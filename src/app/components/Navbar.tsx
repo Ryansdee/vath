@@ -39,7 +39,7 @@ export default function Navbar() {
   // Détection simplifiée basée sur la route
   useEffect(() => {
     // Routes avec fond clair (blanc)
-    const lightRoutes = ['/about', '/blog', '/contact', '/photo', '/diary', '/video'];
+    const lightRoutes = ['/about', '/blog', '/contact', '/photo', '/diary', '/video', '/success', '/admin', '/portal','/admin/portal'];
     setIsLight(lightRoutes.some(route => pathname.startsWith(route)));
   }, [pathname]);
 
