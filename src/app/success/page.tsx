@@ -115,7 +115,7 @@ export default function SuccessPage() {
 
           {/* Subtitle */}
           <p className="text-sm text-gray-600 font-light mb-8 leading-relaxed">
-            Thank you for reaching out! I've received your request and will get back to you as soon as possible.
+            Thank you for reaching out! I&apos;ve received your request and will get back to you as soon as possible.
           </p>
 
           {/* Countdown */}

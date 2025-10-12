@@ -2,17 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { db, storage } from "../../../../lib/firebase";
-import { collection, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Image from "next/image";
+
+interface PortalFile {
+  id: string;
+  url: string;
+  name: string;
+  type: 'image' | 'video' | 'file';
+  size: number;
+}
 
 interface Portal {
   id: string;
   clientName: string;
   clientEmail: string;
   projectName: string;
-  files: any[];
-  createdAt: any;
+  files: PortalFile[];
+  createdAt: Timestamp;
 }
 
 export default function AdminPortalUpload() {
@@ -62,7 +70,7 @@ export default function AdminPortalUpload() {
         const downloadURL = await getDownloadURL(storageRef);
         
         // Déterminer le type de fichier
-        const fileType = file.type.startsWith('image/') ? 'image' : 
+        const fileType: 'image' | 'video' | 'file' = file.type.startsWith('image/') ? 'image' : 
                         file.type.startsWith('video/') ? 'video' : 'file';
         
         // Ajouter le fichier au portail dans Firestore
@@ -241,7 +249,7 @@ export default function AdminPortalUpload() {
                       
                       {selectedPortal.files?.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                          {selectedPortal.files.map((file: any) => (
+                          {selectedPortal.files.map((file: PortalFile) => (
                             <div key={file.id} className="border border-gray-200 p-2">
                               {file.type === 'image' ? (
                                 <div className="relative aspect-square bg-gray-100 mb-2">

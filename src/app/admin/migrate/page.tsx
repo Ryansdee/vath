@@ -105,7 +105,7 @@ export default function AdminMigratePage() {
                     Warning
                   </h3>
                   <div className="mt-2 text-sm text-yellow-700">
-                    <p>This action will update ALL photos with category "personal-project" to "diary".</p>
+                    <p>This action will update ALL photos with category &quot;diary&quot; to &quot;diary&quot;.</p>
                     <p className="mt-1">This operation cannot be undone automatically.</p>
                   </div>
                 </div>

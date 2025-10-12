@@ -123,14 +123,14 @@ export default function AboutPage() {
               {/* Bio Text */}
               <div className="text-center space-y-4 md:space-y-6 px-2">
                 <p className="text-xs md:text-sm lg:text-base leading-relaxed text-gray-700 font-light">
-                  I'm Vadim Thevelin, a photographer, videographer, and director based in Brussels, 
+                  I&apos;m Vadim Thevelin, a photographer, videographer, and director based in Brussels, 
                   available for projects worldwide. My work is driven by a passion for creating bold, 
                   meaningful visuals that connect people and ideas.
                 </p>
 
                 <p className="text-xs md:text-sm lg:text-base leading-relaxed text-gray-700 font-light">
                   I believe every project is a collaboration — a space where vision, trust, and 
-                  creativity come together. Whether I'm behind the camera or leading a team, my goal 
+                  creativity come together. Whether I&apos;m behind the camera or leading a team, my goal 
                   is always the same: to craft images and films that inspire, empower, and leave a 
                   lasting impression.
                 </p>
@@ -153,7 +153,7 @@ export default function AboutPage() {
                   rel="noopener noreferrer"
                   className="text-[10px] md:text-xs uppercase tracking-[0.15em] md:tracking-[0.2em] text-black hover:text-gray-500 transition-colors font-light"
                 >
-                  Main d'Oeuvre
+                  Main d&apos;Oeuvre
                 </a>
                 <span className="hidden sm:inline text-gray-300">|</span>
                 <Link

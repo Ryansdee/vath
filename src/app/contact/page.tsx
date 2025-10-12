@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 type ServiceType = "photography" | "videography" | "direction" | "general";
@@ -85,7 +84,7 @@ export default function ContactPage() {
               Contact
             </h1>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500">
-              Let's discuss your project
+              Let&apos;s discuss your project
             </p>
           </div>
         </header>

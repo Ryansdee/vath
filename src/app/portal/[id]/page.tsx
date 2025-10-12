@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { db } from "../../../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import Image from "next/image";
+import Link from "next/link";
 
 interface PortalFile {
   id: string;
@@ -117,12 +118,12 @@ export default function PortalPage() {
           <p className="text-sm text-gray-600 font-light mb-8">
             {error || "This portal doesn't exist or has been removed."}
           </p>
-          <a
+          <Link
             href="/"
             className="inline-block px-6 py-3 border border-black text-black text-xs uppercase tracking-[0.15em] font-light hover:bg-black hover:text-white transition-all"
           >
             Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     );
