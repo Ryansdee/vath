@@ -26,7 +26,7 @@ interface PortalData {
 export default function PortalPage() {
   const params = useParams();
   const portalId = params.id as string;
-  
+
   const [portal, setPortal] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,21 +36,28 @@ export default function PortalPage() {
     const fetchPortal = async () => {
       try {
         const portalDoc = await getDoc(doc(db, "portals", portalId));
-        
         if (!portalDoc.exists()) {
           setError("Portal not found or expired");
           return;
         }
 
         const data = portalDoc.data() as PortalData;
-        
+
         // Vérifier l'expiration
         if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
           setError("This portal has expired");
           return;
         }
 
-        setPortal(data);
+        // ⚡️ Ajouter les paramètres ?alt=media&dl=1 à chaque URL
+        const filesWithDownload = data.files.map((file) => {
+          const finalUrl = file.url.includes("?")
+            ? `${file.url}&alt=media&dl=1`
+            : `${file.url}?alt=media&dl=1`;
+          return { ...file, url: finalUrl };
+        });
+
+        setPortal({ ...data, files: filesWithDownload });
       } catch (err) {
         console.error("Error fetching portal:", err);
         setError("Error loading portal");
@@ -59,38 +66,41 @@ export default function PortalPage() {
       }
     };
 
-    if (portalId) {
-      fetchPortal();
-    }
+    if (portalId) fetchPortal();
   }, [portalId]);
 
   const handleDownload = async (file: PortalFile) => {
     try {
-      const response = await fetch(file.url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const apiUrl = `/api/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+      const link = document.createElement("a");
+      link.href = apiUrl;
+      link.setAttribute("download", file.name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (err) {
-      console.error("Error downloading file:", err);
-      alert("Error downloading file");
+      console.error("Download failed:", err);
     }
   };
 
   const handleDownloadAll = async () => {
     if (!portal) return;
-    
-    for (const file of portal.files) {
-      await handleDownload(file);
-      // Petit délai entre chaque téléchargement
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+
+    // Préparer le JSON des fichiers
+    const filesParam = encodeURIComponent(JSON.stringify(
+      portal.files.map((f) => ({ url: f.url, name: f.name }))
+    ));
+
+    const zipUrl = `/api/download-zip?files=${filesParam}`;
+
+    const link = document.createElement("a");
+    link.href = zipUrl;
+    link.setAttribute("download", "portal-files.zip");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
 
   if (loading) {
     return (
@@ -133,7 +143,6 @@ export default function PortalPage() {
     <>
       <style jsx global>{`
         @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
-        
         * {
           font-family: 'Acid Grotesk', sans-serif;
         }
@@ -155,13 +164,13 @@ export default function PortalPage() {
         {/* Files Section */}
         <main className="px-4 md:px-6 py-12">
           <div className="max-w-7xl mx-auto">
-            
-            {/* Actions Bar */}
+            {/* Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div className="text-xs uppercase tracking-[0.15em] text-gray-600 font-light">
-                {portal.files.length} {portal.files.length === 1 ? 'file' : 'files'} available
+                {portal.files.length}{" "}
+                {portal.files.length === 1 ? "file" : "files"} available
               </div>
-              
+
               <button
                 onClick={handleDownloadAll}
                 className="px-6 py-2.5 bg-black text-white text-xs uppercase tracking-[0.15em] font-light hover:bg-gray-800 transition-all"
@@ -193,7 +202,6 @@ export default function PortalPage() {
                           <span className="text-4xl">🎬</span>
                         </div>
                       )}
-                      
                       {/* Overlay */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
                         <button
@@ -207,7 +215,7 @@ export default function PortalPage() {
                         </button>
                       </div>
                     </div>
-                    
+
                     <p className="text-[10px] uppercase tracking-wider text-gray-600 font-light truncate">
                       {file.name}
                     </p>
@@ -236,10 +244,13 @@ export default function PortalPage() {
             >
               ×
             </button>
-            
-            <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
+
+            <div
+              className="w-full max-w-6xl"
+              onClick={(e) => e.stopPropagation()}
+            >
               {selectedFile.type === "image" ? (
-                <div className="relative w-full aspect-video">
+                <div className="relative w-full aspect-video">-
                   <Image
                     src={selectedFile.url}
                     alt={selectedFile.name}
@@ -255,7 +266,7 @@ export default function PortalPage() {
                   className="w-full aspect-video bg-black"
                 />
               )}
-              
+
               <div className="mt-6 flex justify-between items-center">
                 <p className="text-white text-xs uppercase tracking-wider font-light">
                   {selectedFile.name}

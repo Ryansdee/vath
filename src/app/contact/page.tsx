@@ -120,7 +120,8 @@ export default function ContactPage() {
                     <button
                       key={service.id}
                       onClick={() => handleServiceSelect(service.id)}
-                      className="p-8 border border-gray-300 hover:border-black hover:bg-gray-50 transition-all duration-300 text-center group"
+                      className="p-8 border text-black border-gray-300 hover:border-black hover:bg-gray-50 transition-all duration-300 text-center group"
+                      style={{ cursor: 'pointer' }}
                     >
                       <div className="text-4xl mb-4">{service.icon}</div>
                       <h3 className="text-sm uppercase tracking-[0.15em] font-light group-hover:text-black transition-colors">
@@ -145,14 +146,14 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-[0.15em] font-light text-gray-700 mb-2">
+                  <label className="block text-black text-xs uppercase tracking-[0.15em] font-light text-gray-700 mb-2">
                     Your Name
                   </label>
                   <input
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors text-sm"
+                    className="w-full px-4 text-black py-3 border border-gray-300 focus:border-black outline-none transition-colors text-sm"
                     placeholder="John Doe"
                     required
                   />
@@ -166,7 +167,7 @@ export default function ContactPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors text-sm"
+                    className="w-full px-4 py-3 text-black border border-gray-300 focus:border-black outline-none transition-colors text-sm"
                     placeholder="john.doe@example.com"
                     required
                   />
@@ -210,7 +211,7 @@ export default function ContactPage() {
                     value={form.additionalInfo}
                     onChange={(e) => setForm({ ...form, additionalInfo: e.target.value })}
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-black outline-none transition-colors resize-none text-sm"
+                    className="w-full px-4 text-black py-3 border border-gray-300 focus:border-black outline-none transition-colors resize-none text-sm"
                     placeholder="Budget, timeline, specific needs..."
                   />
                 </div>
