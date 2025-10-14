@@ -21,7 +21,6 @@ export async function POST(request: Request) {
       expiresInDays,
       delayEmailMs = 60000
     } = await request.json();
-
     // Validation: only require name and email
     if (!clientName || !clientEmail) {
       return NextResponse.json(

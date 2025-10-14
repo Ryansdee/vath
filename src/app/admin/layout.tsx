@@ -29,7 +29,7 @@ const getAllowedEmails = () => {
   // Fallback : liste hardcodée (à modifier selon vos besoins)
   const fallbackEmails = [
     'ryan.deschuyteneer@gmail.com',
-    // Ajoutez d'autres emails ici si nécessaire
+    'contact@vadimthevelin.com'
   ];
   
   console.warn('NEXT_PUBLIC_ALLOWED_EMAILS not found, using fallback:', fallbackEmails);
