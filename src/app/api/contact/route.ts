@@ -494,7 +494,7 @@ export async function POST(request: Request) {
     // Envoyer l'email à vous (Vadim)
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER,
+      to: 'contact@vadimthevelin.com',
       subject: template.subject,
       html: emailBody,
       replyTo: email,
