@@ -32,7 +32,8 @@ const serviceAccount: ServiceAccount = {
 // Exemple pour initialiser Firebase Admin
 import admin from 'firebase-admin';
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: admin.credential.cert(JSON.parse(JSON.stringify(serviceAccount))),
+  databaseURL: process.env.FIREBASE_DATABASE_URL || ''
 });
 export { admin };
 
