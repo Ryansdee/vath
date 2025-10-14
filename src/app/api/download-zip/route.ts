@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   let files: { url: string; name: string }[];
   try {
     files = JSON.parse(filesParam);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Invalid files parameter" }, { status: 400 });
   }
 
