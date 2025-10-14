@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       files = [],
       projectName,
       expiresInDays,
-      delayEmailMs = 300000
+      delayEmailMs = 60000
     } = await request.json();
 
     // Validation: only require name and email
@@ -91,10 +91,6 @@ export async function POST(request: Request) {
                   <tr>
                     <td style="color: #999999; font-size: 11px; font-weight: 300;">Project:</td>
                     <td style="color: #000000; font-size: 11px; font-weight: 300; text-align: right;">${projectName || "Your Project"}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #999999; font-size: 11px; font-weight: 300;">Files:</td>
-                    <td style="color: #000000; font-size: 11px; font-weight: 300; text-align: right;">${files.length} ${files.length === 1 ? 'file' : 'files'}</td>
                   </tr>
                   ${expiresAt ? `
                   <tr>
