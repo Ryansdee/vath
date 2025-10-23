@@ -127,17 +127,18 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen z-50 flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <p className="text-black text-sm font-light uppercase tracking-wider">
-            Loading...
-          </p>
-        </div>
-      </div>
+<div className="min-h-screen flex items-center justify-center bg-blue-50">
+  <div className="flex flex-col items-center gap-6">
+    <div className="relative w-16 h-16">
+      <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+      <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    <p className="text-blue-700 text-sm font-light uppercase tracking-wider">
+      Loading...
+    </p>
+  </div>
+</div>
+
     );
   }
 

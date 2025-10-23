@@ -83,21 +83,25 @@ export default function AdminPortalUpload() {
           clientName: newPortalName,
           clientEmail: newPortalEmail,
           projectName: newProjectName,
-          files: [], // portal can be empty
-          expiresInDays: 30, // optional expiration
-          delayEmailMs: 300000 // 5 min
+          expiresInDays: 30,
+          delayEmailMs: 300000, // 5 min
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        alert(`Portal created successfully!\nEmail will be sent to ${newPortalEmail} in 5 minutes.`);
+        alert(
+          `Portal created successfully!\n` +
+          `Access Code: ${data.portalCode}\n` +
+          `Email will be sent to ${newPortalEmail} in 5 minutes.\n\n` +
+          `Portal URL: ${data.portalUrl}`
+        );
         setNewPortalName("");
         setNewPortalEmail("");
         setNewProjectName("");
         setShowCreatePortal(false);
-        await fetchPortals(); // refresh list
+        await fetchPortals();
       } else {
         alert(`Error: ${data.error || 'Failed to create portal'}`);
       }

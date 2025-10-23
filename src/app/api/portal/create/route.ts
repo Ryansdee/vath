@@ -11,6 +11,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Function to generate a unique 6-character code
+function generateUniqueCode(): string {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
+}
+
 export async function POST(request: Request) {
   try {
     const {
@@ -21,7 +31,8 @@ export async function POST(request: Request) {
       expiresInDays,
       delayEmailMs = 60000
     } = await request.json();
-    // Validation: only require name and email
+    
+    // Validation
     if (!clientName || !clientEmail) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -30,6 +41,9 @@ export async function POST(request: Request) {
     }
 
     console.log("Creating portal for:", clientName, clientEmail);
+
+    // Generate unique code
+    const portalCode = generateUniqueCode();
 
     // Optional expiration date
     const expiresAt = expiresInDays
@@ -44,13 +58,14 @@ export async function POST(request: Request) {
       projectName: projectName || "Untitled Project",
       createdAt: Timestamp.now(),
       ...(expiresAt && { expiresAt }),
+      portalCode // Store the unique code
     };
 
     const portalRef = await addDoc(collection(db, "portals"), portalData);
     const portalId = portalRef.id;
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vath-portofolio.netlify.app/'}/portal/${portalId}`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vath-portofolio.netlify.app'}/portal/${portalId}`;
 
-    console.log("Portal created with ID:", portalId);
+    console.log("Portal created with ID:", portalId, "and code:", portalCode);
 
     // Function to send email
     const sendEmail = async () => {
@@ -91,6 +106,10 @@ export async function POST(request: Request) {
                     <td style="color: #999999; font-size: 11px; font-weight: 300;">Project:</td>
                     <td style="color: #000000; font-size: 11px; font-weight: 300; text-align: right;">${projectName || "Your Project"}</td>
                   </tr>
+                  <tr>
+                    <td style="color: #999999; font-size: 11px; font-weight: 300;">Access Code:</td>
+                    <td style="color: #000000; font-size: 11px; font-weight: 500; text-align: right; letter-spacing: 2px;">${portalCode}</td>
+                  </tr>
                   ${expiresAt ? `
                   <tr>
                     <td style="color: #999999; font-size: 11px; font-weight: 300;">Expires:</td>
@@ -99,6 +118,7 @@ export async function POST(request: Request) {
                   ` : ''}
                 </table>
               </div>
+              <p style="margin: 30px 0 0 0; color: #999999; font-size: 11px; font-weight: 300; line-height: 1.6;">You may be asked to enter your access code: <strong style="color: #000000; letter-spacing: 1px;">${portalCode}</strong></p>
             </td>
           </tr>
         </table>
@@ -123,11 +143,18 @@ export async function POST(request: Request) {
         success: true,
         portalId,
         portalUrl,
+        portalCode,
         message: `Portal created. Email will be sent in ${delayEmailMs / 60000} minutes.`
       });
     } else {
       await sendEmail();
-      return NextResponse.json({ success: true, portalId, portalUrl, message: "Portal created and email sent immediately." });
+      return NextResponse.json({ 
+        success: true, 
+        portalId, 
+        portalUrl, 
+        portalCode,
+        message: "Portal created and email sent immediately." 
+      });
     }
 
   } catch (error) {

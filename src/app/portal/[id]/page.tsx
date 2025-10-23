@@ -21,6 +21,7 @@ interface PortalData {
   files: PortalFile[];
   expiresAt?: Date;
   createdAt: Date;
+  portalCode: string; // ✅ Ajout du code
 }
 
 export default function PortalPage() {
@@ -31,6 +32,11 @@ export default function PortalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<PortalFile | null>(null);
+  
+  // ✅ États pour l'authentification
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
 
   useEffect(() => {
     const fetchPortal = async () => {
@@ -49,7 +55,7 @@ export default function PortalPage() {
           return;
         }
 
-        // ⚡️ Ajouter les paramètres ?alt=media&dl=1 à chaque URL
+        // Ajouter les paramètres de téléchargement
         const filesWithDownload = data.files.map((file) => {
           const finalUrl = file.url.includes("?")
             ? `${file.url}&alt=media&dl=1`
@@ -69,6 +75,21 @@ export default function PortalPage() {
     if (portalId) fetchPortal();
   }, [portalId]);
 
+  // ✅ Fonction pour vérifier le code
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!portal) return;
+    
+    if (codeInput.toUpperCase() === portal.portalCode.toUpperCase()) {
+      setIsAuthenticated(true);
+      setCodeError("");
+    } else {
+      setCodeError("Invalid access code. Please try again.");
+      setCodeInput("");
+    }
+  };
+
   const handleDownload = async (file: PortalFile) => {
     try {
       const apiUrl = `/api/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
@@ -86,7 +107,6 @@ export default function PortalPage() {
   const handleDownloadAll = async () => {
     if (!portal) return;
 
-    // Préparer le JSON des fichiers
     const filesParam = encodeURIComponent(JSON.stringify(
       portal.files.map((f) => ({ url: f.url, name: f.name }))
     ));
@@ -100,7 +120,6 @@ export default function PortalPage() {
     link.click();
     document.body.removeChild(link);
   };
-
 
   if (loading) {
     return (
@@ -139,6 +158,64 @@ export default function PortalPage() {
     );
   }
 
+  // ✅ Écran de vérification du code
+  if (!isAuthenticated) {
+    return (
+      <>
+        <style jsx global>{`
+          @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
+          * {
+            font-family: 'Acid Grotesk', sans-serif;
+          }
+        `}</style>
+
+        <div className="min-h-screen bg-white flex items-center justify-center px-4">
+          <div className="max-w-md w-full">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-light uppercase tracking-[0.2em] text-black mb-2">
+                Access Portal
+              </h1>
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+                Enter your access code
+              </p>
+            </div>
+
+            <form onSubmit={handleVerifyCode} className="space-y-6">
+              <div>
+                <input
+                  type="text"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  placeholder="XXXXXX"
+                  maxLength={6}
+                  className="w-full px-4 py-3 border border-gray-300 text-center text-2xl tracking-[0.3em] uppercase font-light focus:outline-none focus:border-black transition-colors"
+                  required
+                />
+                {codeError && (
+                  <p className="mt-2 text-xs text-red-600 text-center font-light">
+                    {codeError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-black text-white text-xs uppercase tracking-[0.15em] font-light hover:bg-gray-800 transition-all"
+              >
+                Access Portal
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs text-center text-gray-500 font-light">
+              Check your email for the access code
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ✅ Contenu du portail (après authentification)
   return (
     <>
       <style jsx global>{`
@@ -250,7 +327,7 @@ export default function PortalPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {selectedFile.type === "image" ? (
-                <div className="relative w-full aspect-video">-
+                <div className="relative w-full aspect-video">
                   <Image
                     src={selectedFile.url}
                     alt={selectedFile.name}

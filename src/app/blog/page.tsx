@@ -47,12 +47,17 @@ export default function BlogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-zinc-300 border-t-black animate-spin"></div>
-          <p className="text-zinc-600 text-sm uppercase tracking-wider">Chargement...</p>
+    <div className="min-h-screen flex items-center justify-center bg-blue-50">
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
+        <p className="text-blue-700 text-sm font-light uppercase tracking-wider">
+          Loading...
+        </p>
       </div>
+    </div>
     );
   }
 
