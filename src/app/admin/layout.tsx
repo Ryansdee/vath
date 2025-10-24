@@ -167,7 +167,7 @@ export default function AdminLayout({
 
             {!showEmailForm ? (
               <div className="space-y-4">
-                {/* Google Sign In */}
+                {/* Connexion depuis Google */}
                 <button
                   onClick={handleGoogleSignIn}
                   className="w-full px-6 py-4 bg-black text-white text-xs uppercase tracking-[0.15em] font-light hover:bg-gray-800 transition-all flex items-center justify-center gap-3"
@@ -193,7 +193,7 @@ export default function AdminLayout({
                   Sign in with Google
                 </button>
 
-                {/* Divider */}
+                {/* Seperateur */}
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-200"></div>
@@ -203,7 +203,7 @@ export default function AdminLayout({
                   </div>
                 </div>
 
-                {/* Email Button */}
+                {/* Bouton et function d'adresse e-mail */}
                 <button
                   onClick={() => setShowEmailForm(true)}
                   className="w-full px-6 py-4 border-2 border-black text-black text-xs uppercase tracking-[0.15em] font-light hover:bg-black hover:text-white transition-all"

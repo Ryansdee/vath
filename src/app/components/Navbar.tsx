@@ -43,7 +43,11 @@ export default function Navbar() {
     setIsLight(lightRoutes.some(route => pathname.startsWith(route)));
   }, [pathname]);
 
-  const textColor = isLight ? "text-black" : "text-white";
+const textColor = isOpen
+  ? "text-black" // quand le menu est ouvert
+  : isLight
+  ? "text-black" // mode clair
+  : "text-white"; // mode sombre
   const inactiveColor = isLight ? "text-black" : "text-white";
   const hoverColor = isLight ? "hover:text-black" : "hover:text-white";
 

@@ -3,8 +3,7 @@ import archiver from "archiver";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const filesParam = searchParams.get("files"); // JSON.stringify([{url, name}, ...])
-
+  const filesParam = searchParams.get("files"); 
   if (!filesParam) {
     return NextResponse.json({ error: "Missing files parameter" }, { status: 400 });
   }

@@ -22,6 +22,7 @@ interface Portal {
   files: PortalFile[];
   createdAt: Timestamp;
   expiresAt?: Timestamp;
+  portalCode: string;
 }
 
 export default function AdminPortalUpload() {
@@ -380,7 +381,6 @@ export default function AdminPortalUpload() {
                         onClick={() => {
                           const url = `${window.location.origin}/portal/${portal.id}`;
                           navigator.clipboard.writeText(url);
-                          alert("Portal link copied to clipboard!");
                         }}
                         className="flex-1 px-3 py-1.5 text-[10px] uppercase tracking-wider border border-gray-300 text-gray-600 hover:border-black hover:text-black transition-colors"
                       >
@@ -412,6 +412,13 @@ export default function AdminPortalUpload() {
                     <p className="text-xs text-gray-500 mt-1">
                       Portal ID: <span className="font-mono">{selectedPortal.id}</span>
                     </p>
+                    <button className="text-xs text-gray-500 underline mt-1 hover:cursor-pointer"
+                    title={` ${selectedPortal.portalCode} `}
+                    onClick={()=>{
+                      navigator.clipboard.writeText(selectedPortal.portalCode);
+                    }}>
+                      COPY PORTAL CODE
+                    </button>
                   </div>
 
                   {/* Upload Area */}

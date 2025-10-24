@@ -491,7 +491,7 @@ export async function POST(request: Request) {
 
     const emailBody = template.html(name, email, additionalInfo || "");
 
-    // Envoyer l'email à vous (Vadim)
+    // Envoyer l'email à toi (Vadim)
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: 'contact@vadimthevelin.com',

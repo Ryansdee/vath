@@ -44,6 +44,7 @@ export default function AdminUploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  //Function qui gère l'upload des fichiers 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) return alert("Choose at least one image");
@@ -87,6 +88,7 @@ export default function AdminUploadPage() {
         setUploadProgress(Math.round((uploadedCount / totalFiles) * 100));
       }
 
+      //function de notification une fois l'upload terminé si c'est un succès ou non
       alert(`✓ ${totalFiles} item(s) uploaded successfully in high quality to ${category}!`);
       setFiles([]);
       setDescription("");
@@ -102,7 +104,6 @@ export default function AdminUploadPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="pt-32 pb-16 px-6 border-b border-gray-100">
         <div className="max-w-4xl mx-auto animate-fade-in text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-black mb-3 tracking-tight">
@@ -111,8 +112,6 @@ export default function AdminUploadPage() {
           <p className="text-gray-500 text-sm">
             High quality upload • No compression
           </p>
-          
-          {/* Navigation */}
           <div className="mt-8 flex gap-4 justify-center">
             <Link 
               href="/admin/portal"
@@ -135,13 +134,10 @@ export default function AdminUploadPage() {
           </div>
         </div>
       </header>
-
-      {/* Content */}
       <main className="px-6 py-16">
         <div className="max-w-4xl mx-auto">
           <form onSubmit={handleUpload} className="space-y-8">
             
-            {/* Category Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Category *
@@ -181,7 +177,6 @@ export default function AdminUploadPage() {
               </p>
             </div>
 
-            {/* Upload Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Files ({files.length})
@@ -211,7 +206,6 @@ export default function AdminUploadPage() {
                 </p>
               </label>
 
-              {/* Previews */}
               {files.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                   {files.map((item, index) => (
@@ -245,7 +239,6 @@ export default function AdminUploadPage() {
               )}
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description (optional)
@@ -279,7 +272,6 @@ export default function AdminUploadPage() {
               </p>
             </div>
 
-            {/* Progress */}
             {uploading && (
               <div className="space-y-2">
                 <div className="w-full h-2 bg-gray-200 overflow-hidden">
@@ -294,7 +286,6 @@ export default function AdminUploadPage() {
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={uploading || files.length === 0}

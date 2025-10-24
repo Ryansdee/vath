@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Function to generate a unique 6-character code
+// Function qui génère un code unique de 6 caractères (on peut le modifier comme tu veux)
 function generateUniqueCode(): string {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -32,7 +32,6 @@ export async function POST(request: Request) {
       delayEmailMs = 60000
     } = await request.json();
     
-    // Validation
     if (!clientName || !clientEmail) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -42,15 +41,12 @@ export async function POST(request: Request) {
 
     console.log("Creating portal for:", clientName, clientEmail);
 
-    // Generate unique code
     const portalCode = generateUniqueCode();
-
-    // Optional expiration date
+    // Temps de expiration (optionelle si pas envie d'utiliser)
     const expiresAt = expiresInDays
       ? Timestamp.fromDate(new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000))
       : null;
 
-    // Create portal in Firestore
     const portalData = {
       clientName,
       clientEmail,
@@ -58,7 +54,7 @@ export async function POST(request: Request) {
       projectName: projectName || "Untitled Project",
       createdAt: Timestamp.now(),
       ...(expiresAt && { expiresAt }),
-      portalCode // Store the unique code
+      portalCode // Function to store the portal client access code
     };
 
     const portalRef = await addDoc(collection(db, "portals"), portalData);
@@ -67,7 +63,7 @@ export async function POST(request: Request) {
 
     console.log("Portal created with ID:", portalId, "and code:", portalCode);
 
-    // Function to send email
+    // Function to send email to client when they photos and or videos are uploaded
     const sendEmail = async () => {
       try {
         await transporter.sendMail({
@@ -135,7 +131,7 @@ export async function POST(request: Request) {
       }
     };
 
-    // Delay email if needed
+    // (option activé mais un delai de temps d'envoie du mail)
     if (delayEmailMs > 0) {
       console.log(`Email scheduled for ${delayEmailMs / 1000 / 60} minutes from now`);
       setTimeout(sendEmail, delayEmailMs);
