@@ -184,8 +184,8 @@ export default function PhotosByTagPage({ params }: PageProps) {
                       <Image
                         src={photo.url}
                         alt={photo.description}
-                        width={800}
-                        height={600}
+                        width={1400}
+                        height={1200}
                         className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
                         quality={90}
                       />
@@ -290,13 +290,13 @@ export default function PhotosByTagPage({ params }: PageProps) {
               <Image
                 src={selectedPhoto.url}
                 alt={selectedPhoto.description}
-                width={2000}
-                height={2000}
+                width={2030}
+                height={2070}
                 className="object-contain transition-transform duration-300"
                 style={{ 
                   transform: `scale(${zoom})`,
-                  maxWidth: '90vw',
-                  maxHeight: '85vh',
+                  maxWidth: '240vw',
+                  maxHeight: '240vh',
                   width: 'auto',
                   height: 'auto'
                 }}

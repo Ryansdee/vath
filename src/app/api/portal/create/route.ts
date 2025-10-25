@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       files = [],
       projectName,
       expiresInDays,
-      delayEmailMs = 60000
+      delayEmailMs = 0 //optionelle 
     } = await request.json();
     
     if (!clientName || !clientEmail) {
