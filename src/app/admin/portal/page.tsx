@@ -116,6 +116,7 @@ export default function AdminPortalUpload() {
     setCreating(true);
     try {
       // ✨ Préparation conditionnelle du body
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const bodyData: any = {
         clientName: newPortalName,
         clientEmail: newPortalEmail,
