@@ -74,7 +74,7 @@ export default function AdminUploadPage() {
         await addDoc(collection(db, "photos"), {
           url,
           description,
-          tags: tags.split(',').map((t) => t.trim().replace(" ", "-")),
+          tags: tags.split(',').map((t) => t.trim().replaceAll(" ", "-")),
           category: category,
           createdAt: new Date(),
           metadata: {

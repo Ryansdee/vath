@@ -168,7 +168,7 @@ export default function PhotosPage() {
                     className="collection-card fade-in"
                     style={{ 
                       animationDelay: `${index * 0.08}s`,
-                      aspectRatio: '16/9'
+                      aspectRatio: '4/3'
                     }}
                   >
                     <div className="relative w-full h-full bg-black">
@@ -187,8 +187,8 @@ export default function PhotosPage() {
                       <div className="absolute inset-0 flex flex-col items-center justify-center hover:bg-black/60 z-10 p-4 transition-colors duration-300">
                         <div className="collection-text text-center">
                           <h3 
-                            className="text-sm md:text-base font-light uppercase text-white mb-1 tracking-tight"
-                            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
+                            className="text-sm md:text-base font-light uppercase  text-white mb-1 tracking-tight"
+                            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)', fontWeight: 'bolder', fontSize: '1.1rem' }}
                           >
                             {(sticker.tag).replaceAll('-', ' ')}
                           </h3>

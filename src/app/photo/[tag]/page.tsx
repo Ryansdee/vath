@@ -323,7 +323,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                       {tagText.title}
                     </h3>
                     <p className="text-sm text-gray-600 font-light leading-relaxed">
-                      {tagText.content}
+                      {tagText.content.replaceAll('-', ' ')}
                     </p>
                   </div>
                 )}
