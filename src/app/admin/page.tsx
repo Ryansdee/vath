@@ -74,7 +74,7 @@ export default function AdminUploadPage() {
         await addDoc(collection(db, "photos"), {
           url,
           description,
-          tags: tags.split(",").map((t) => t.trim()),
+          tags: tags.split(',').map((t) => t.trim().replace(" ", "-")),
           category: category,
           createdAt: new Date(),
           metadata: {
@@ -261,7 +261,7 @@ export default function AdminUploadPage() {
               <input
                 type="text"
                 placeholder="FWP, DAMSO, portrait..."
-                value={tags}
+                value={tags.replaceAll(' ', '-')}
                 onChange={(e) => setTags(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 focus:border-black focus:ring-1 focus:ring-black outline-none transition-colors"
                 required

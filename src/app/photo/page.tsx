@@ -163,7 +163,7 @@ export default function PhotosPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {tagStickers.map((sticker, index) => (
                   <Link
-                    key={sticker.tag}
+                    key={sticker.tag.replace('-', ' ')}
                     href={`/photo/${(sticker.tag).replace(' ', '-')}`}
                     className="collection-card fade-in"
                     style={{ 
@@ -175,7 +175,7 @@ export default function PhotosPage() {
                       {/* Image */}
                       <Image
                         src={sticker.randomPhoto}
-                        alt={sticker.tag}
+                        alt={sticker.tag.replace('-', ' ')}
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="collection-image object-cover"
@@ -190,7 +190,7 @@ export default function PhotosPage() {
                             className="text-sm md:text-base font-light uppercase text-white mb-1 tracking-tight"
                             style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
                           >
-                            {(sticker.tag).replace(' ', '-')}
+                            {(sticker.tag).replaceAll('-', ' ')}
                           </h3>
                           <p className="text-[10px] text-white/80 uppercase tracking-wider font-light">
                             {sticker.count}

@@ -39,23 +39,24 @@ export default function PhotosByTagPage({ params }: PageProps) {
   const [showInfo, setShowInfo] = useState(false);
   const { tag: rawTag } = use(params);
   const tag = decodeURIComponent(rawTag);
-  console.log("Tag from URL:", tag);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const photosSnapshot = await getDocs(collection(db, "photos"));
-        const allPhotos = photosSnapshot.docs.map((doc) => ({
+        // ✨ OPTIMISATION 1: Query Firestore avec un index sur "tags"
+        // Firestore filtrera directement côté serveur
+        const photosRef = collection(db, "photos");
+        const photosQuery = query(photosRef, where("tags", "array-contains", tag));
+        const photosSnapshot = await getDocs(photosQuery);
+        
+        const filteredPhotos = photosSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data()
         } as Photo));
 
-        const filteredPhotos = allPhotos.filter(photo => 
-          photo.tags.includes(tag)
-        );
-
         setPhotos(filteredPhotos);
 
+        // ✨ OPTIMISATION 2: Chargement parallèle avec Promise.all
         const textsQuery = query(
           collection(db, "tagTexts"),
           where("tag", "==", tag)
@@ -161,7 +162,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
             </Link>
 
             <h1 className="text-4xl md:text-6xl font-light uppercase tracking-tight text-black">
-              {tag}
+              {tag.replaceAll("-", " ")}
             </h1>
             <p className="text-gray-500 text-sm uppercase tracking-wider mt-3 font-light">
               {photos.length} {photos.length > 1 ? 'Photos' : 'Photo'}
@@ -181,13 +182,16 @@ export default function PhotosByTagPage({ params }: PageProps) {
                     onClick={() => setSelectedPhoto(photo)}
                   >
                     <div className="relative overflow-hidden bg-gray-100 transition-transform duration-300 hover:scale-[1.02]">
+                      {/* ✨ OPTIMISATION 3: Images avec sizes et loading lazy */}
                       <Image
                         src={photo.url}
                         alt={photo.description}
-                        width={1400}
-                        height={1200}
-                        className="w-full h-auto transition-transform duration-500 group-hover:scale-105"
-                        quality={90}
+                        width={800}
+                        height={600}
+                        className="w-full h-auto"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        loading="lazy"
+                        quality={85}
                       />
                     </div>
                   </div>
@@ -295,8 +299,6 @@ export default function PhotosByTagPage({ params }: PageProps) {
                 className="object-contain transition-transform duration-300"
                 style={{ 
                   transform: `scale(${zoom})`,
-                  maxWidth: '240vw',
-                  maxHeight: '240vh',
                   width: 'auto',
                   height: 'auto'
                 }}

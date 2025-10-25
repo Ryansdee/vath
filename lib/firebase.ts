@@ -1,8 +1,8 @@
 // lib/firebase.ts
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getStorage } from "firebase/storage";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, type User } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,12 +13,29 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase (évite la double initialisation)
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
 export const storage = getStorage(app);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const user = auth.currentUser;
-if (user) {
-  await user.getIdToken(true); // force refresh token
-}
+
+// ✨ Fonction helper pour récupérer le user avec token refresh
+export const getCurrentUser = async (): Promise<User | null> => {
+  const user = auth.currentUser;
+  if (user) {
+    try {
+      await user.getIdToken(true); // Force refresh token
+      return user;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      return user;
+    }
+  }
+  return null;
+};
+
+// ⚠️ Pour obtenir le user synchrone (sans token refresh)
+export const getUser = () => auth.currentUser;
+
 export default app;

@@ -8,7 +8,7 @@ async function migratePersonalProjectToDiary() {
   try {
     // Récupérer tous les documents avec category "personal-project"
     const photosRef = collection(db, "photos");
-    const q = query(photosRef, where("category", "==", "personal-project"));
+    const q = query(photosRef, where("category", "==", "Luidji and Tuerie from Foufoune Palace at Paris Fashion week 2025"));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
@@ -26,7 +26,7 @@ async function migratePersonalProjectToDiary() {
       try {
         const docRef = doc(db, "photos", docSnapshot.id);
         await updateDoc(docRef, {
-          category: "diary"
+          category: "Luidji-and-Tuerie-from-Foufoune-Palace-at-Paris-Fashion-week-2025"
         });
         console.log(`✓ Migrated: ${docSnapshot.id}`);
         successCount++;
