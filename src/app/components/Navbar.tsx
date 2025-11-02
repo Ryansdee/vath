@@ -17,7 +17,7 @@ export default function Navbar() {
 
   const linksRight = [
     { href: "/about", label: "About Me" },
-    { href: "/blog", label: "Blog" },
+    { href: "/services", label: "Services" },
     { href: "/contact", label: "Contact" },
   ];
 
@@ -27,7 +27,7 @@ export default function Navbar() {
     { href: "/video", label: "Video" },
     { href: "/photo", label: "Photos" },
     { href: "/about", label: "About" },
-    { href: "/blog", label: "Blog" },
+    { href: "/services", label: "Services" },
     { href: "/contact", label: "Contact" },
   ];
 
@@ -39,7 +39,7 @@ export default function Navbar() {
   // Détection simplifiée basée sur la route
   useEffect(() => {
     // Routes avec fond clair (blanc)
-    const lightRoutes = ['/about', '/blog', '/contact', '/photo', '/diary', '/video', '/success', '/admin', '/portal','/admin/portal'];
+    const lightRoutes = ['/about', '/contact', '/photo', '/diary', '/video', '/success', '/admin', '/portal','/admin/portal', '/services'];
     setIsLight(lightRoutes.some(route => pathname.startsWith(route)));
   }, [pathname]);
 

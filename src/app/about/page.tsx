@@ -167,44 +167,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Services Section */}
-        <section className="py-12 md:py-16 px-4 md:px-6 bg-gray-50">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-xl md:text-2xl lg:text-3xl font-light uppercase tracking-[0.15em] md:tracking-[0.2em] text-black mb-8 md:mb-12 text-center">
-              Services
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-              <div className="text-center group p-4 md:p-0">
-                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
-                  Photography
-                </h3>
-                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
-                  Portraits, events, products and custom creative projects
-                </p>
-              </div>
-
-              <div className="text-center group p-4 md:p-0">
-                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
-                  Videography
-                </h3>
-                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
-                  Video production, editing and professional post-production
-                </p>
-              </div>
-
-              <div className="text-center group p-4 md:p-0">
-                <h3 className="text-xs md:text-sm uppercase tracking-[0.15em] md:tracking-[0.2em] font-light text-black mb-2 md:mb-3 group-hover:text-gray-500 transition-colors">
-                  Direction
-                </h3>
-                <p className="text-[11px] md:text-xs text-gray-600 font-light leading-relaxed">
-                  Artistic direction and visual design for audiovisual projects
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CTA Section */}
         <section className="py-16 md:py-20 px-4 md:px-6">
           <div className="max-w-2xl mx-auto text-center">
