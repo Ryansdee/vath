@@ -59,7 +59,7 @@ export default function VideosPage() {
             url: v.url,
             thumbnail: v.thumbnail ?? undefined,
             tags: [],
-            createdAt: new Date(), // → peut être remplacé plus tard par la vraie date publiée
+            createdAt: new Date(),
           }));
 
           // Fusion locale + YouTube sans doublons
@@ -155,11 +155,14 @@ export default function VideosPage() {
         * { font-family: "Acid Grotesk", sans-serif; }
       `}</style>
 
-      <div className="min-h-screen bg-white pt-24 pb-16">
-        <main className="px-4 md:px-6">
+      {/* Padding top réduit sur mobile */}
+      <div className="min-h-screen bg-white pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16">
+        {/* Padding horizontal optimisé pour mobile */}
+        <main className="px-3 sm:px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
             {videos.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              /* Grille responsive : 1 colonne sur mobile, 2 sur tablette, 3 sur desktop */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                 {videos.map((video, index) => (
                   <div
                     key={video.id}
@@ -174,7 +177,7 @@ export default function VideosPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex justify-center py-24 text-gray-400 uppercase tracking-wider">
+              <div className="flex justify-center py-12 sm:py-16 md:py-24 text-gray-400 text-xs sm:text-sm uppercase tracking-wider">
                 No videos available
               </div>
             )}
@@ -182,20 +185,23 @@ export default function VideosPage() {
         </main>
       </div>
 
+      {/* Modal vidéo optimisée pour mobile */}
       {selectedVideo && (
         <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 md:p-6"
           onClick={() => setSelectedVideo(null)}
         >
+          {/* Bouton fermer repositionné pour mobile */}
           <button
-            className="absolute top-8 right-8 text-white text-3xl hover:text-gray-400"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 text-white text-3xl sm:text-4xl hover:text-gray-400 z-10 w-10 h-10 flex items-center justify-center"
             onClick={() => setSelectedVideo(null)}
+            aria-label="Fermer"
           >
             ×
           </button>
 
           <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
-            <div className="aspect-video bg-black">
+            <div className="aspect-video bg-black relative">
               {isExternalVideo(selectedVideo.url) ? (
                 <>
                   {getVideoPreview(selectedVideo)}
@@ -203,9 +209,9 @@ export default function VideosPage() {
                     href={selectedVideo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 hover:opacity-100 transition"
+                    className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 hover:opacity-100 active:opacity-100 transition"
                   >
-                    <span className="px-6 py-3 bg-white text-black text-xs uppercase rounded">
+                    <span className="px-4 py-2 sm:px-6 sm:py-3 bg-white text-black text-xs uppercase rounded">
                       Regarder sur YouTube
                     </span>
                   </a>
@@ -215,9 +221,16 @@ export default function VideosPage() {
               )}
             </div>
 
-            <div className="text-center mt-8 text-white">
-              <h3 className="text-xl font-light uppercase">{selectedVideo.title}</h3>
-              <p className="text-gray-400 text-sm mt-2">{selectedVideo.description}</p>
+            {/* Texte responsive */}
+            <div className="text-center mt-4 sm:mt-6 md:mt-8 text-white px-2">
+              <h3 className="text-base sm:text-lg md:text-xl font-light uppercase">
+                {selectedVideo.title}
+              </h3>
+              {selectedVideo.description && (
+                <p className="text-gray-400 text-xs sm:text-sm mt-2 max-w-3xl mx-auto">
+                  {selectedVideo.description}
+                </p>
+              )}
             </div>
           </div>
         </div>
