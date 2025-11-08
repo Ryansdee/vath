@@ -150,9 +150,9 @@ export default function ClientPortalPage() {
         } else {
           setShowCodeGate(true);
         }
-      } catch (error: unknown) {
-        setFatalError("Error loading portal");
-      } finally {
+        } catch {
+          setFatalError("Error loading portal");
+        } finally {
         setLoading(false);
       }
     };
