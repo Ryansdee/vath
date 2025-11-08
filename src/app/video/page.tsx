@@ -3,16 +3,24 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { db } from "../../../lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, Timestamp } from "firebase/firestore";
 
 interface Video {
   id: string;
   title: string;
   description: string;
   url: string;
-  thumbnail: string;
+  thumbnail?: string;
   tags: string[];
-  createdAt: Date;
+  createdAt: Date | Timestamp;
+}
+
+interface ScrapedVideo {
+  id: string;
+  title: string;
+  description?: string;
+  url: string;
+  thumbnail?: string | null;
 }
 
 export default function VideosPage() {
@@ -23,20 +31,108 @@ export default function VideosPage() {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
+        // --- Étape 1 : Charger depuis Firestore
         const snapshot = await getDocs(collection(db, "videos"));
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data()
-        } as Video));
-        setVideos(data.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+        const localData = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as Video)
+        );
+
+        const sortedLocal = localData.sort((a, b) => {
+          const da = a.createdAt instanceof Date ? a.createdAt : a.createdAt.toDate();
+          const dbb = b.createdAt instanceof Date ? b.createdAt : b.createdAt.toDate();
+          return dbb.getTime() - da.getTime();
+        });
+
+        setVideos(sortedLocal);
+
+        // --- Étape 2 : Scraper YouTube
+        const res = await fetch(
+          `/api/scrape?channelUrl=https://www.youtube.com/@maindoeuvre.productions`
+        );
+        const data = await res.json();
+
+        if (Array.isArray(data.videos)) {
+          const youtubeVideos: Video[] = data.videos.map((v: ScrapedVideo) => ({
+            id: v.id,
+            title: v.title,
+            description: v.description ?? "",
+            url: v.url,
+            thumbnail: v.thumbnail ?? undefined,
+            tags: [],
+            createdAt: new Date(), // → peut être remplacé plus tard par la vraie date publiée
+          }));
+
+          // Fusion locale + YouTube sans doublons
+          const merged: Video[] = [
+            ...youtubeVideos,
+            ...sortedLocal.filter(
+              (local) => !youtubeVideos.some((yt) => yt.id === local.id)
+            ),
+          ];
+
+          const sortedMerged = merged.sort((a, b) => {
+            const da = a.createdAt instanceof Date ? a.createdAt : a.createdAt.toDate();
+            const dbb = b.createdAt instanceof Date ? b.createdAt : b.createdAt.toDate();
+            return dbb.getTime() - da.getTime();
+          });
+
+          setVideos(sortedMerged);
+        } else {
+          console.warn("No videos found in scraper response", data);
+        }
       } catch (error) {
         console.error("Error loading videos:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchVideos();
   }, []);
+
+  const isExternalVideo = (url: string) => {
+    try {
+      const u = new URL(url);
+      return u.hostname.includes("youtube") || u.hostname.includes("vimeo");
+    } catch {
+      return false;
+    }
+  };
+
+  const getVideoPreview = (video: Video) => {
+    if (video.thumbnail) {
+      return (
+        <Image
+          src={video.thumbnail}
+          alt={video.title || "Video thumbnail"}
+          fill
+          className="object-cover collection-image"
+          quality={85}
+        />
+      );
+    }
+
+    try {
+      const u = new URL(video.url);
+      if (u.hostname.includes("youtube") || u.hostname.includes("youtu.be")) {
+        const id = u.searchParams.get("v") || u.pathname.replace("/", "");
+        return (
+          <Image
+            src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
+            alt={video.title}
+            fill
+            className="object-cover collection-image"
+          />
+        );
+      }
+    } catch {}
+
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white text-3xl">
+        🎥
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -46,9 +142,7 @@ export default function VideosPage() {
             <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
             <div className="absolute inset-0 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-black text-sm font-light uppercase tracking-wider">
-            Loading...
-          </p>
+          <p className="text-black text-sm font-light uppercase tracking-wider">Loading...</p>
         </div>
       </div>
     );
@@ -57,77 +151,10 @@ export default function VideosPage() {
   return (
     <>
       <style jsx global>{`
-        @import url('https://fonts.cdnfonts.com/css/acid-grotesk');
-        
-        * {
-          font-family: 'Acid Grotesk', sans-serif;
-        }
-        
-        .collection-card {
-          position: relative;
-          overflow: hidden;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .collection-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            135deg,
-            transparent 0%,
-            rgba(0, 0, 0, 0.1) 50%,
-            rgba(0, 0, 0, 0.3) 100%
-          );
-          opacity: 0;
-          transition: opacity 0.4s ease;
-          z-index: 1;
-        }
-        
-        .collection-card:hover::before {
-          opacity: 1;
-        }
-        
-        .collection-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-        
-        .collection-image {
-          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .collection-card:hover .collection-image {
-          transform: scale(1.08);
-        }
-        
-        .collection-text {
-          transform: translateY(8px);
-          opacity: 0;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .collection-card:hover .collection-text {
-          transform: translateY(0);
-          opacity: 1;
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .fade-in {
-          animation: fadeInUp 0.6s ease-out forwards;
-        }
+        @import url("https://fonts.cdnfonts.com/css/acid-grotesk");
+        * { font-family: "Acid Grotesk", sans-serif; }
       `}</style>
-      
+
       <div className="min-h-screen bg-white pt-24 pb-16">
         <main className="px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
@@ -137,110 +164,60 @@ export default function VideosPage() {
                   <div
                     key={video.id}
                     onClick={() => setSelectedVideo(video)}
-                    className="collection-card fade-in cursor-pointer"
-                    style={{ 
-                      animationDelay: `${index * 0.08}s`,
-                      aspectRatio: '16/9'
-                    }}
+                    className="collection-card cursor-pointer"
+                    style={{ animationDelay: `${index * 0.08}s`, aspectRatio: "16/9" }}
                   >
                     <div className="relative w-full h-full bg-black">
-                      {/* Image */}
-                      <Image
-                        src={video.thumbnail}
-                        alt={video.title}
-                        fill
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="collection-image object-cover"
-                        quality={85}
-                        priority={index < 8}
-                      />
-                      
-                      {/* Overlay with text and play button */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center hover:bg-black/60 z-10 p-4 transition-colors duration-300">
-                        <div className="collection-text text-center">
-                          {/* Play button */}
-                          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-white flex items-center justify-center mx-auto mb-4 backdrop-blur-sm bg-white/10">
-                            <div className="w-0 h-0 border-t-[8px] md:border-t-[10px] border-t-transparent border-l-[12px] md:border-l-[16px] border-l-white border-b-[8px] md:border-b-[10px] border-b-transparent ml-1"></div>
-                          </div>
-                          
-                          <h3 
-                            className="text-sm md:text-base font-light uppercase text-white mb-1 tracking-tight"
-                            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
-                          >
-                            {video.title}
-                          </h3>
-                          
-                          {video.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 justify-center">
-                              {video.tags.slice(0, 2).map((tag, i) => (
-                                <span
-                                  key={i}
-                                  className="text-[10px] text-white/80 uppercase tracking-wider font-light"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      {getVideoPreview(video)}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-24">
-                <p className="text-gray-400 text-base uppercase tracking-wider text-center font-light">
-                  No videos available
-                </p>
+              <div className="flex justify-center py-24 text-gray-400 uppercase tracking-wider">
+                No videos available
               </div>
             )}
           </div>
         </main>
       </div>
 
-      {/* Modal Video */}
       {selectedVideo && (
         <div
           className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedVideo(null)}
         >
           <button
-            className="absolute top-8 right-8 text-white text-3xl font-light hover:text-gray-400 transition-colors z-10"
+            className="absolute top-8 right-8 text-white text-3xl hover:text-gray-400"
             onClick={() => setSelectedVideo(null)}
-            aria-label="Close"
           >
             ×
           </button>
+
           <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
-            <div className="aspect-video bg-black overflow-hidden">
-              <iframe
-                src={selectedVideo.url}
-                className="w-full h-full"
-                allowFullScreen
-                allow="autoplay; fullscreen; picture-in-picture"
-                title={selectedVideo.title}
-              />
-            </div>
-            <div className="mt-8 text-center px-4">
-              <h3 className="text-xl font-light uppercase text-white mb-3 tracking-tight">
-                {selectedVideo.title}
-              </h3>
-              <p className="text-gray-400 text-sm font-light max-w-3xl mx-auto">
-                {selectedVideo.description}
-              </p>
-              {selectedVideo.tags.length > 0 && (
-                <div className="flex flex-wrap gap-3 justify-center mt-6">
-                  {selectedVideo.tags.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="text-[10px] text-gray-500 uppercase tracking-wider font-light"
-                    >
-                      {tag}
+            <div className="aspect-video bg-black">
+              {isExternalVideo(selectedVideo.url) ? (
+                <>
+                  {getVideoPreview(selectedVideo)}
+                  <a
+                    href={selectedVideo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 hover:opacity-100 transition"
+                  >
+                    <span className="px-6 py-3 bg-white text-black text-xs uppercase rounded">
+                      Regarder sur YouTube
                     </span>
-                  ))}
-                </div>
+                  </a>
+                </>
+              ) : (
+                <video src={selectedVideo.url} controls className="w-full h-full" />
               )}
+            </div>
+
+            <div className="text-center mt-8 text-white">
+              <h3 className="text-xl font-light uppercase">{selectedVideo.title}</h3>
+              <p className="text-gray-400 text-sm mt-2">{selectedVideo.description}</p>
             </div>
           </div>
         </div>

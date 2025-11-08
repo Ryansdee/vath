@@ -1,3 +1,4 @@
+// app/admin/portal/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -39,9 +40,14 @@ interface Portal {
   expiresAt?: Timestamp;
   portalCode: string;
   price?: number;
+
+  // Nouveaux champs
+  paymentRequired?: boolean;
+  paid?: boolean;
+  paidAt?: Timestamp | null;
 }
 
-export default function AdminPortalUpload() {
+export default function AdminPortalPage() {
   const [portals, setPortals] = useState<Portal[]>([]);
   const [selectedPortal, setSelectedPortal] = useState<Portal | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -52,18 +58,18 @@ export default function AdminPortalUpload() {
   const [fileToDelete, setFileToDelete] = useState<PortalFile | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // États pour créer un nouveau portal
+  // Création portal
   const [showCreatePortal, setShowCreatePortal] = useState(false);
   const [newPortalName, setNewPortalName] = useState("");
   const [newPortalEmail, setNewPortalEmail] = useState("");
   const [newProjectName, setNewProjectName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // ✨ Prix optionnel avec checkbox
+  // Prix optionnel
   const [enablePrice, setEnablePrice] = useState(false);
   const [newPortalPrice, setNewPortalPrice] = useState<number | undefined>(undefined);
 
-  // État pour supprimer un portal
+  // Suppression portal
   const [showDeletePortalConfirm, setShowDeletePortalConfirm] = useState(false);
   const [portalToDelete, setPortalToDelete] = useState<Portal | null>(null);
   const [deletingPortal, setDeletingPortal] = useState(false);
@@ -75,15 +81,10 @@ export default function AdminPortalUpload() {
   const fetchPortals = async () => {
     try {
       const snapshot = await getDocs(collection(db, "portals"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Portal[];
-      setPortals(
-        data.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds)
-      );
-    } catch (error) {
-      console.error("Error fetching portals:", error);
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Portal[];
+      setPortals(data.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)));
+    } catch (e) {
+      console.error("Error fetching portals:", e);
     } finally {
       setLoading(false);
     }
@@ -93,39 +94,37 @@ export default function AdminPortalUpload() {
     if (!selectedPortal) return;
     try {
       const snapshot = await getDocs(collection(db, "portals"));
-      const portal = snapshot.docs
-        .find((doc) => doc.id === selectedPortal.id)
-        ?.data() as Portal | undefined;
-      if (portal) {
-        setSelectedPortal({ ...portal, id: selectedPortal.id });
-      }
+      const portal = snapshot.docs.find((d) => d.id === selectedPortal.id)?.data() as Portal | undefined;
+      if (portal) setSelectedPortal({ ...portal, id: selectedPortal.id });
       await fetchPortals();
-    } catch (error) {
-      console.error("Error refreshing portal data:", error);
+    } catch (e) {
+      console.error("Error refreshing portal data:", e);
     }
   };
 
   const handleCreatePortal = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!newPortalName || !newPortalEmail || !newProjectName) {
       alert("Please fill in all required fields");
       return;
     }
-
     setCreating(true);
     try {
-      // ✨ Préparation conditionnelle du body
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const bodyData: any = {
+      const bodyData: {
+        clientName: string;
+        clientEmail: string;
+        projectName: string;
+        expiresInDays: number;
+        delayEmailMs: number;
+        price?: number;
+      } = {
         clientName: newPortalName,
         clientEmail: newPortalEmail,
         projectName: newProjectName,
         expiresInDays: 30,
-        delayEmailMs: 300000, // 5 minutes
+        delayEmailMs: 300000,
       };
 
-      // N'ajouter le prix que si la checkbox est cochée et le prix > 0
       if (enablePrice && newPortalPrice !== undefined && newPortalPrice > 0) {
         bodyData.price = newPortalPrice;
       }
@@ -135,15 +134,14 @@ export default function AdminPortalUpload() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyData),
       });
-
       const data = await response.json();
 
       if (data.success) {
         alert(
           `Portal created successfully!\n` +
-            `Access Code: ${data.portalCode}\n` +
-            `Email will be sent to ${newPortalEmail} in 5 minutes.\n\n` +
-            `Portal URL: ${data.portalUrl}`
+          `Access Code: ${data.portalCode}\n` +
+          `Email will be sent to ${newPortalEmail} in 5 minutes.\n\n` +
+          `Portal URL: ${data.portalUrl}`
         );
         setNewPortalName("");
         setNewPortalEmail("");
@@ -155,8 +153,8 @@ export default function AdminPortalUpload() {
       } else {
         alert(`Error: ${data.error || "Failed to create portal"}`);
       }
-    } catch (error) {
-      console.error("Error creating portal:", error);
+    } catch (e) {
+      console.error("Error creating portal:", e);
       alert("Error creating portal. Check console for details.");
     } finally {
       setCreating(false);
@@ -171,7 +169,7 @@ export default function AdminPortalUpload() {
   const handleDeletePortal = async (portal: Portal) => {
     setDeletingPortal(true);
     try {
-      // Supprimer tous les fichiers du Storage
+      // Supprimer fichiers Storage
       if (portal.files && portal.files.length > 0) {
         for (const file of portal.files) {
           try {
@@ -185,25 +183,19 @@ export default function AdminPortalUpload() {
           }
         }
       }
-
-      // Supprimer le dossier du portal dans Storage
+      // Supprimer dossier
       const folderRef = ref(storage, `portals/${portal.id}`);
       const fileList = await listAll(folderRef);
       await Promise.all(fileList.items.map((item) => deleteObject(item)));
 
-      // Supprimer le document Firestore
+      // Supprimer doc Firestore
       await deleteDoc(doc(db, "portals", portal.id));
 
       alert(`Portal "${portal.projectName}" deleted successfully!`);
-
-      // Si c'était le portal sélectionné, le déselectionner
-      if (selectedPortal?.id === portal.id) {
-        setSelectedPortal(null);
-      }
-
+      if (selectedPortal?.id === portal.id) setSelectedPortal(null);
       await fetchPortals();
-    } catch (error) {
-      console.error("Error deleting portal:", error);
+    } catch (e) {
+      console.error("Error deleting portal:", e);
       alert("Error deleting portal. Check console for details.");
     } finally {
       setDeletingPortal(false);
@@ -212,32 +204,22 @@ export default function AdminPortalUpload() {
     }
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files || !selectedPortal) return;
-
     const files = Array.from(event.target.files);
     setUploading(true);
     setUploadProgress([]);
-
     try {
       for (const file of files) {
         const fileName = `${selectedPortal.id}/${Date.now()}-${file.name}`;
         const storageRef = ref(storage, `portals/${fileName}`);
-
         setUploadProgress((prev) => [...prev, `Uploading ${file.name}...`]);
-
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
 
-        const fileType: "image" | "video" | "file" = file.type.startsWith(
-          "image/"
-        )
-          ? "image"
-          : file.type.startsWith("video/")
-          ? "video"
-          : "file";
+        const fileType: "image" | "video" | "file" =
+          file.type.startsWith("image/") ? "image" :
+          file.type.startsWith("video/") ? "video" : "file";
 
         const portalRef = doc(db, "portals", selectedPortal.id);
         await updateDoc(portalRef, {
@@ -249,14 +231,12 @@ export default function AdminPortalUpload() {
             size: file.size,
           }),
         });
-
         setUploadProgress((prev) => [...prev, `✓ ${file.name} uploaded`]);
       }
-
       alert(`Successfully uploaded ${files.length} file(s)!`);
       await refreshPortalData();
-    } catch (error) {
-      console.error("Error uploading files:", error);
+    } catch (e) {
+      console.error("Error uploading files:", e);
       alert("Error uploading files. Check console for details.");
     } finally {
       setUploading(false);
@@ -271,26 +251,21 @@ export default function AdminPortalUpload() {
 
   const handleDeleteFile = async (file: PortalFile) => {
     if (!selectedPortal) return;
-
     setDeleting(true);
     try {
-      // Supprimer du Storage
       const url = new URL(file.url);
       const encodedPath = url.pathname.split("/o/")[1];
       const filePath = decodeURIComponent(encodedPath);
       const storageRef = ref(storage, filePath);
       await deleteObject(storageRef);
 
-      // Supprimer de Firestore
       const portalRef = doc(db, "portals", selectedPortal.id);
-      await updateDoc(portalRef, {
-        files: arrayRemove(file),
-      });
+      await updateDoc(portalRef, { files: arrayRemove(file) });
 
       await refreshPortalData();
       alert("File deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting file:", error);
+    } catch (e) {
+      console.error("Error deleting file:", e);
       alert("Error deleting file. Check console for details.");
     } finally {
       setDeleting(false);
@@ -301,24 +276,18 @@ export default function AdminPortalUpload() {
 
   const handleRenameFile = async (file: PortalFile) => {
     if (!selectedPortal) return;
-
     const newName = prompt("Enter new file name:", file.name);
     if (!newName || newName === file.name) return;
-
     try {
       const portalRef = doc(db, "portals", selectedPortal.id);
       const updatedFiles = selectedPortal.files.map((f) =>
         f.id === file.id ? { ...f, name: newName } : f
       );
-
-      await updateDoc(portalRef, {
-        files: updatedFiles,
-      });
-
+      await updateDoc(portalRef, { files: updatedFiles });
       await refreshPortalData();
       alert("File renamed successfully!");
-    } catch (error) {
-      console.error("Error renaming file:", error);
+    } catch (e) {
+      console.error("Error renaming file:", e);
       alert("Error renaming file. Check console for details.");
     }
   };
@@ -343,10 +312,7 @@ export default function AdminPortalUpload() {
             <p className="text-xs text-gray-500 uppercase tracking-wider font-light">
               Create, manage, and delete client portals
             </p>
-            <a
-              href="/admin"
-              className="text-md text-black hover:text-gray-600 transition-colors mt-2 inline-block"
-            >
+            <a href="/admin" className="text-md text-black hover:text-gray-600 transition-colors mt-2 inline-block">
               &#8592; Go back
             </a>
           </div>
@@ -374,25 +340,25 @@ export default function AdminPortalUpload() {
                 <div
                   key={portal.id}
                   className={`border transition-all ${
-                    selectedPortal?.id === portal.id
-                      ? "border-black bg-gray-50"
-                      : "border-gray-200"
+                    selectedPortal?.id === portal.id ? "border-black bg-gray-50" : "border-gray-200"
                   }`}
                 >
-                  <button
-                    onClick={() => setSelectedPortal(portal)}
-                    className="w-full text-left p-4"
-                  >
-                    <p className="text-sm font-light text-black mb-1">
-                      {portal.clientName}
-                    </p>
+                  <button onClick={() => setSelectedPortal(portal)} className="w-full text-left p-4">
+                    <p className="text-sm font-light text-black mb-1">{portal.clientName}</p>
                     <p className="text-xs text-gray-500">{portal.projectName}</p>
                     <p className="text-xs text-gray-400 mt-1">{portal.clientEmail}</p>
-                    {portal.price && (
-                      <p className="text-xs text-green-600 mt-1 font-medium">
-                        💰 ${portal.price.toFixed(2)}
+
+                    {portal.price ? (
+                      <p className="text-xs mt-1">
+                        <span className="font-medium text-black">💰 {portal.price.toFixed(2)} €</span>{" "}
+                        {portal.paid ? (
+                          <span className="text-green-700">• payé</span>
+                        ) : (
+                          <span className="text-amber-600">• en attente</span>
+                        )}
                       </p>
-                    )}
+                    ) : null}
+
                     <p className="text-xs text-gray-400 mt-2">
                       {portal.files?.length || 0} files
                     </p>
@@ -421,7 +387,7 @@ export default function AdminPortalUpload() {
             </div>
           </div>
 
-          {/* Zone d'upload et gestion des fichiers */}
+          {/* Zone d'upload & détail */}
           <div className="lg:col-span-2">
             {selectedPortal ? (
               <div>
@@ -432,40 +398,55 @@ export default function AdminPortalUpload() {
                   <p className="text-xs text-gray-500">{selectedPortal.clientName}</p>
                   <p className="text-xs text-gray-400">{selectedPortal.clientEmail}</p>
                   {selectedPortal.price && (
-                    <p className="text-xs text-green-600 mt-1 font-medium">
-                      Price: ${selectedPortal.price.toFixed(2)}
+                    <p className="text-xs mt-1">
+                      <span className="font-medium text-black">💰 {selectedPortal.price.toFixed(2)} €</span>{" "}
+                      {selectedPortal.paid ? (
+                        <span className="text-green-700">• payé</span>
+                      ) : (
+                        <span className="text-amber-600">• en attente</span>
+                      )}
                     </p>
+                  )}
+
+                  {selectedPortal.price && !selectedPortal.paid && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/portal/mark-paid`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ portalId: selectedPortal.id }),
+                          });
+                          const data = await res.json();
+                          if (!data.success && !data.alreadyPaid) throw new Error(data.error || "Failed");
+                          alert("Marqué payé. Le code d’accès a été envoyé par email.");
+                          await refreshPortalData();
+                        } catch (e) {
+                          console.error(e);
+                          alert("Impossible de marquer payé / envoyer le code.");
+                        }
+                      }}
+                      className="mt-4 px-4 py-2 bg-black text-white text-xs uppercase tracking-wider hover:bg-gray-800 transition-colors"
+                    >
+                      Mark paid & send access code
+                    </button>
                   )}
                 </div>
 
                 {/* Upload zone */}
                 <div className="border-2 border-dashed border-gray-300 p-8 text-center mb-8">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer inline-block px-6 py-3 bg-black text-white text-xs uppercase tracking-wider hover:bg-gray-800 transition-colors disabled:opacity-50"
-                  >
+                  <input type="file" multiple onChange={handleFileUpload} disabled={uploading} className="hidden" id="file-upload" />
+                  <label htmlFor="file-upload" className="cursor-pointer inline-block px-6 py-3 bg-black text-white text-xs uppercase tracking-wider hover:bg-gray-800 transition-colors disabled:opacity-50">
                     {uploading ? "Uploading..." : "Upload Files"}
                   </label>
-                  <p className="text-xs text-gray-500 mt-4">
-                    Click to select files or drag and drop
-                  </p>
+                  <p className="text-xs text-gray-500 mt-4">Click to select files or drag and drop</p>
                 </div>
 
                 {/* Progress */}
                 {uploadProgress.length > 0 && (
                   <div className="mb-8 p-4 bg-gray-50 border border-gray-200">
                     {uploadProgress.map((msg, i) => (
-                      <p key={i} className="text-xs text-gray-600">
-                        {msg}
-                      </p>
+                      <p key={i} className="text-xs text-gray-600">{msg}</p>
                     ))}
                   </div>
                 )}
@@ -478,30 +459,17 @@ export default function AdminPortalUpload() {
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {selectedPortal.files.map((file) => (
-                        <div
-                          key={file.id}
-                          className="border border-gray-200 p-2 cursor-pointer hover:border-black transition-colors"
-                          onClick={() => setSelectedFile(file)}
-                        >
+                        <div key={file.id} className="border border-gray-200 p-2 cursor-pointer hover:border-black transition-colors" onClick={() => setSelectedFile(file)}>
                           {file.type === "image" ? (
                             <div className="relative aspect-square bg-gray-100 mb-2">
-                              <Image
-                                src={file.url}
-                                alt={file.name}
-                                fill
-                                className="object-cover"
-                              />
+                              <Image src={file.url} alt={file.name} fill className="object-cover" />
                             </div>
                           ) : (
                             <div className="aspect-square bg-gray-100 mb-2 flex items-center justify-center">
-                              <span className="text-4xl">
-                                {file.type === "video" ? "🎥" : "📄"}
-                              </span>
+                              <span className="text-4xl">{file.type === "video" ? "🎥" : "📄"}</span>
                             </div>
                           )}
-                          <p className="text-xs text-gray-600 truncate">
-                            {file.name}
-                          </p>
+                          <p className="text-xs text-gray-600 truncate">{file.name}</p>
                         </div>
                       ))}
                     </div>
@@ -510,9 +478,7 @@ export default function AdminPortalUpload() {
               </div>
             ) : (
               <div className="text-center py-20">
-                <p className="text-gray-400 text-sm">
-                  Select a portal to manage files
-                </p>
+                <p className="text-gray-400 text-sm">Select a portal to manage files</p>
               </div>
             )}
           </div>
@@ -523,55 +489,23 @@ export default function AdminPortalUpload() {
       {showCreatePortal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-6">
-              Create New Portal
-            </h3>
-
+            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-6">Create New Portal</h3>
             <form onSubmit={handleCreatePortal} className="space-y-4">
               <div>
-                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">
-                  Client Name *
-                </label>
-                <input
-                  type="text"
-                  value={newPortalName}
-                  onChange={(e) => setNewPortalName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none"
-                  required
-                />
+                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">Client Name *</label>
+                <input type="text" value={newPortalName} onChange={(e) => setNewPortalName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none" required />
               </div>
-
               <div>
-                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">
-                  Client Email *
-                </label>
-                <input
-                  type="email"
-                  value={newPortalEmail}
-                  onChange={(e) => setNewPortalEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none"
-                  required
-                />
+                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">Client Email *</label>
+                <input type="email" value={newPortalEmail} onChange={(e) => setNewPortalEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none" required />
               </div>
-
               <div>
-                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">
-                  Project Name *
-                </label>
-                <input
-                  type="text"
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none"
-                  required
-                />
+                <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">Project Name *</label>
+                <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none" required />
               </div>
 
-              <p className="text-xs text-gray-500 italic">
-                * Email will be sent to the client in 5 minutes
-              </p>
+              <p className="text-xs text-gray-500 italic">* Email will be sent to the client in 5 minutes</p>
 
-              {/* ✨ Prix optionnel avec checkbox */}
               <div className="border-t border-gray-200 pt-4 mt-4">
                 <label className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-600 mb-3 cursor-pointer">
                   <input
@@ -588,25 +522,17 @@ export default function AdminPortalUpload() {
 
                 {enablePrice && (
                   <div>
-                    <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">
-                      Price ($)
-                    </label>
+                    <label className="block text-xs uppercase tracking-wider text-gray-600 mb-2">Price (€)</label>
                     <input
                       type="number"
                       min={0}
                       step="0.01"
                       value={newPortalPrice ?? ""}
-                      onChange={(e) =>
-                        setNewPortalPrice(
-                          e.target.value ? Number(e.target.value) : undefined
-                        )
-                      }
+                      onChange={(e) => setNewPortalPrice(e.target.value ? Number(e.target.value) : undefined)}
                       className="w-full px-4 py-2 border border-gray-300 text-sm focus:border-black focus:outline-none"
                       placeholder="0.00"
                     />
-                    <p className="text-xs text-gray-500 italic mt-1">
-                      Amount the client needs to pay to access files
-                    </p>
+                    <p className="text-xs text-gray-500 italic mt-1">Amount the client needs to pay to access files</p>
                   </div>
                 )}
               </div>
@@ -644,16 +570,12 @@ export default function AdminPortalUpload() {
       {showDeletePortalConfirm && portalToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 max-w-md w-full">
-            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-4">
-              Delete Portal
-            </h3>
+            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-4">Delete Portal</h3>
             <p className="text-sm text-gray-600 mb-2">
-              Are you sure you want to delete the portal for{" "}
-              <strong>{portalToDelete.clientName}</strong>?
+              Are you sure you want to delete the portal for <strong>{portalToDelete.clientName}</strong>?
             </p>
             <p className="text-sm text-red-600 mb-6">
-              This will delete all {portalToDelete.files?.length || 0} files and
-              cannot be undone.
+              This will delete all {portalToDelete.files?.length || 0} files and cannot be undone.
             </p>
             <div className="flex gap-4">
               <button
@@ -680,45 +602,24 @@ export default function AdminPortalUpload() {
 
       {/* File Preview Modal */}
       {selectedFile && (
-        <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedFile(null)}
-        >
-          <button
-            className="absolute top-8 right-8 text-white text-3xl font-light hover:text-gray-400 transition-colors z-10"
-            onClick={() => setSelectedFile(null)}
-          >
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4" onClick={() => setSelectedFile(null)}>
+          <button className="absolute top-8 right-8 text-white text-3xl font-light hover:text-gray-400 transition-colors z-10" onClick={() => setSelectedFile(null)}>
             ×
           </button>
 
           <div className="w-full max-w-6xl" onClick={(e) => e.stopPropagation()}>
             {selectedFile.type === "image" ? (
               <div className="relative w-full aspect-video">
-                <Image
-                  src={selectedFile.url}
-                  alt={selectedFile.name}
-                  fill
-                  className="object-contain"
-                  sizes="100vw"
-                />
+                <Image src={selectedFile.url} alt={selectedFile.name} fill className="object-contain" sizes="100vw" />
               </div>
             ) : selectedFile.type === "video" ? (
-              <video
-                src={selectedFile.url}
-                controls
-                className="w-full aspect-video bg-black"
-              />
+              <video src={selectedFile.url} controls className="w-full aspect-video bg-black" />
             ) : (
               <div className="w-full aspect-video bg-gray-900 flex items-center justify-center">
                 <div className="text-center">
                   <span className="text-8xl">📄</span>
                   <p className="text-white mt-4">{selectedFile.name}</p>
-                  <a
-                    href={selectedFile.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block mt-4 px-6 py-2 border border-white text-white text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-all"
-                  >
+                  <a href={selectedFile.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 px-6 py-2 border border-white text-white text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-all">
                     Download
                   </a>
                 </div>
@@ -726,9 +627,7 @@ export default function AdminPortalUpload() {
             )}
 
             <div className="mt-6 flex justify-between items-center">
-              <p className="text-white text-xs uppercase tracking-wider font-light">
-                {selectedFile.name}
-              </p>
+              <p className="text-white text-xs uppercase tracking-wider font-light">{selectedFile.name}</p>
               <div className="flex gap-4">
                 <button
                   onClick={() => {
@@ -758,12 +657,9 @@ export default function AdminPortalUpload() {
       {showDeleteConfirm && fileToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-8 max-w-md w-full">
-            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-4">
-              Confirm Delete
-            </h3>
+            <h3 className="text-xl font-light uppercase tracking-[0.15em] text-black mb-4">Confirm Delete</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete <strong>{fileToDelete.name}</strong>?
-              This action cannot be undone.
+              Are you sure you want to delete <strong>{fileToDelete.name}</strong>? This action cannot be undone.
             </p>
             <div className="flex gap-4">
               <button
