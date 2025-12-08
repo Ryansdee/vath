@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS", // 🚨 C'est la ligne la plus importante : forcer CJS
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist-scripts" // Optionnel, pour la compilation
+  },
+  "include": [
+    "./scripts/convert.ts" // Assurez-vous que le chemin est correct
+  ]
+}
