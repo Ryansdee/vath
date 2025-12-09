@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, use, useMemo } from "react";
+import type { Variants } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { db } from "../../../../lib/firebase";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
-import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 /* =========================
    TYPES
@@ -64,12 +65,13 @@ const parseFirestoreDate = (val: FirestoreDate): Date => {
    Chargement progressif : Thumbnail → Medium → Full
 ========================= */
 
-interface ProgressivePhotoProps {
+function ProgressivePhoto({
+  photo,
+  onSelect,
+}: {
   photo: Photo;
   onSelect: () => void;
-}
-
-function ProgressivePhoto({ photo, onSelect }: ProgressivePhotoProps) {
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [mediumLoaded, setMediumLoaded] = useState(false);
@@ -157,14 +159,8 @@ function ProgressivePhoto({ photo, onSelect }: ProgressivePhotoProps) {
    LIGHTBOX COMPONENTS
 ========================= */
 
-/* =========================
-   LIGHTBOX - CAROUSEL FRAME
-   Même taille pour toutes les images avec padding 1em
-========================= */
-
-/* Image principale - grande et haute qualité */
-const MainFrame: React.FC<{ photo: Photo; zoom: number }> = ({ photo, zoom }) => (
-  <div className="relative w-[60vw] h-[70vh] max-w-[1200px] max-h-[800px] mx-[1em]">
+const MainFrame = ({ photo, zoom }: { photo: Photo; zoom: number }) => (
+  <div className="relative w-[60vw] h-[70vh] max-w-[1200px] max-h-[800px] mx-4">
     <Image
       src={normalizeToWebp(photo.url)}
       alt={photo.description}
@@ -179,11 +175,10 @@ const MainFrame: React.FC<{ photo: Photo; zoom: number }> = ({ photo, zoom }) =>
   </div>
 );
 
-/* Aperçus latéraux - même ratio mais plus petits */
-const SideFrame: React.FC<{ photo: Photo; onClick: () => void }> = ({ photo, onClick }) => (
+const SideFrame = ({ photo, onClick }: { photo: Photo; onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="hidden lg:block relative w-[15vw] max-w-[280px] aspect-[3/2] mx-[1em] opacity-50 hover:opacity-80 cursor-pointer transition-all duration-300"
+    className="hidden lg:block relative w-[15vw] max-w-[280px] aspect-[3/2] mx-4 opacity-40 hover:opacity-70 cursor-pointer transition-all duration-300"
     style={{ filter: "blur(1px)" }}
   >
     <Image
@@ -198,25 +193,50 @@ const SideFrame: React.FC<{ photo: Photo; onClick: () => void }> = ({ photo, onC
 );
 
 /* =========================
+   SLIDE VARIANTS
+========================= */
+
+const slideVariants: Variants = {
+  enter: (d: number) => ({
+    x: d > 0 ? 120 : -120,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 320,
+      damping: 32,
+    },
+  },
+  exit: (d: number) => ({
+    x: d < 0 ? 120 : -120,
+    opacity: 0,
+    transition: { duration: 0.2 },
+  }),
+};
+
+/* =========================
    PAGE PRINCIPALE
 ========================= */
 
 export default function PhotosByTagPage({ params }: PageProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [tagTextData, setTagTextData] = useState<TagText | null>(null);
+  const [tagText, setTagText] = useState<TagText | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
+  const [zoom, setZoom] = useState(1);
 
   const { tag: rawTag } = use(params);
   const tag = useMemo(() => decodeURIComponent(rawTag), [rawTag]);
 
-  const selectedPhoto = selectedIndex !== null ? photos[selectedIndex] : null;
+  const selected = selectedIndex !== null ? photos[selectedIndex] : null;
 
-  /* ================= FETCH ================= */
+  /* ===== FETCH ===== */
 
   useEffect(() => {
     const fetchData = async () => {
@@ -247,7 +267,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
           const doc = textSnap.docs[0];
           const data = doc.data() as TagTextDataFromFirestore;
 
-          setTagTextData({
+          setTagText({
             id: doc.id,
             tag: data.tag ?? tag,
             title: data.title ?? tag.replaceAll("-", " "),
@@ -267,7 +287,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
     fetchData();
   }, [tag]);
 
-  /* ================= NAVIGATION ================= */
+  /* ===== NAVIGATION ===== */
 
   const navigate = useCallback(
     (dir: 1 | -1) => {
@@ -279,15 +299,12 @@ export default function PhotosByTagPage({ params }: PageProps) {
     [selectedIndex, photos.length]
   );
 
-  const handlePrev = useCallback(() => navigate(-1), [navigate]);
-  const handleNext = useCallback(() => navigate(1), [navigate]);
-
   const closeLightbox = useCallback(() => {
     setSelectedIndex(null);
     setZoom(1);
   }, []);
 
-  /* ================= KEYBOARD ================= */
+  /* ===== KEYBOARD ===== */
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -296,11 +313,11 @@ export default function PhotosByTagPage({ params }: PageProps) {
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
-          handlePrev();
+          navigate(-1);
           break;
         case "ArrowRight":
           e.preventDefault();
-          handleNext();
+          navigate(1);
           break;
         case "Escape":
           closeLightbox();
@@ -320,17 +337,9 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, handlePrev, handleNext, closeLightbox]);
+  }, [selectedIndex, navigate, closeLightbox]);
 
-  /* ================= ANIMATION VARIANTS ================= */
-
-  const slideVariants = {
-    enter: (d: number) => ({ x: d > 0 ? 100 : -100, opacity: 0 }),
-    center: { x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    exit: (d: number) => ({ x: d < 0 ? 100 : -100, opacity: 0, transition: { duration: 0.2 } }),
-  };
-
-  /* ================= LOADING STATE ================= */
+  /* ===== LOADING STATE ===== */
 
   if (loading) {
     return (
@@ -344,7 +353,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
     );
   }
 
-  /* ================= RENDER ================= */
+  /* ===== RENDER ===== */
 
   return (
     <div className="min-h-screen bg-white">
@@ -361,15 +370,14 @@ export default function PhotosByTagPage({ params }: PageProps) {
             Back to Collections
           </Link>
 
-          {/* Tag title if available */}
-          {tagTextData && (
+          {tagText && (
             <div className="mt-8">
               <h1 className="text-3xl md:text-4xl font-light text-gray-900 capitalize">
-                {tagTextData.title}
+                {tagText.title}
               </h1>
-              {tagTextData.content && (
+              {tagText.content && (
                 <p className="mt-4 text-gray-600 max-w-2xl font-light leading-relaxed">
-                  {tagTextData.content}
+                  {tagText.content}
                 </p>
               )}
             </div>
@@ -408,7 +416,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
       {/* Lightbox */}
       <AnimatePresence>
-        {selectedPhoto && selectedIndex !== null && (
+        {selected && selectedIndex !== null && (
           <motion.div
             className="fixed inset-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-center"
             initial={{ opacity: 0 }}
@@ -417,7 +425,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
             transition={{ duration: 0.3 }}
             onClick={closeLightbox}
           >
-            {/* Main container - carousel with large center and side previews */}
+            {/* Carousel container */}
             <div
               className="relative flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
@@ -426,11 +434,11 @@ export default function PhotosByTagPage({ params }: PageProps) {
               {photos.length > 1 && (
                 <SideFrame
                   photo={photos[(selectedIndex - 1 + photos.length) % photos.length]}
-                  onClick={handlePrev}
+                  onClick={() => navigate(-1)}
                 />
               )}
 
-              {/* Current photo - large and high quality */}
+              {/* Current photo */}
               <AnimatePresence custom={direction} mode="wait">
                 <motion.div
                   key={selectedIndex}
@@ -440,7 +448,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
                   animate="center"
                   exit="exit"
                 >
-                  <MainFrame photo={selectedPhoto} zoom={zoom} />
+                  <MainFrame photo={selected} zoom={zoom} />
                 </motion.div>
               </AnimatePresence>
 
@@ -448,7 +456,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
               {photos.length > 1 && (
                 <SideFrame
                   photo={photos[(selectedIndex + 1) % photos.length]}
-                  onClick={handleNext}
+                  onClick={() => navigate(1)}
                 />
               )}
             </div>
@@ -457,7 +465,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handlePrev();
+                navigate(-1);
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
               aria-label="Photo précédente"
@@ -470,7 +478,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleNext();
+                navigate(1);
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
               aria-label="Photo suivante"
