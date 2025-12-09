@@ -5,6 +5,7 @@ import { collection, getDocs, query, where, Timestamp } from "firebase/firestore
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { b } from "framer-motion/dist/types.d-DsEeKk6G";
 
 /* ---------- Interfaces et Utilitaires ---------- */
 interface Photo {
@@ -195,10 +196,11 @@ const LightboxPhoto: React.FC<LightboxPhotoProps> = ({ photo, zoom, description 
 );
 
 
+
 /* ---------- Page principale ---------- */
 export default function PhotosByTagPage({ params }: PageProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [tagTextData, setTagTextData] = useState<TagText | null>(null);
+  const [, setTagTextData] = useState<TagText | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -211,6 +213,14 @@ export default function PhotosByTagPage({ params }: PageProps) {
   // Utilisation de useMemo pour décoder le tag une seule fois
   const { tag: rawTag } = use(params);
   const tag = useMemo(() => decodeURIComponent(rawTag), [rawTag]);
+
+  interface TagTextDataFromFirestore {
+  tag?: string;
+  title?: string;
+  content?: string;
+  createdAt?: FirestoreDate; 
+  updatedAt?: FirestoreDate;
+}
 
   /* ---------- Charger données Firestore ---------- */
   useEffect(() => {
@@ -241,15 +251,19 @@ export default function PhotosByTagPage({ params }: PageProps) {
 
         if (!textSnap.empty) {
           const doc = textSnap.docs[0];
-          const data = doc.data() as Record<string, any>;
+          // FIX: Use the specific interface instead of Record<string, any>
+          const data = doc.data() as TagTextDataFromFirestore; 
           
           setTagTextData({
             id: doc.id,
             tag: data.tag ?? tag,
-            title: (data.title as string) ?? tag.replaceAll("-", " "),
-            content: (data.content as string) ?? "",
-            createdAt: parseFirestoreDate(data.createdAt as FirestoreDate),
-            updatedAt: parseFirestoreDate(data.updatedAt as FirestoreDate),
+            // FIX: The type assertion (data.title as string) is no longer strictly necessary 
+            // but can be kept for clarity if your linter allows it, or simply rely on the interface.
+            title: data.title ?? tag.replaceAll("-", " "),
+            content: data.content ?? "",
+            // FIX: No need for explicit type casting of data.createdAt/updatedAt
+            createdAt: parseFirestoreDate(data.createdAt), 
+            updatedAt: parseFirestoreDate(data.updatedAt),
           });
         }
       } catch (e) {
