@@ -1,13 +1,16 @@
 "use client";
+
 import { useEffect, useState, useRef, useCallback, use, useMemo } from "react";
 import { db } from "../../../../lib/firebase";
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { b } from "framer-motion/dist/types.d-DsEeKk6G";
 
-/* ---------- Interfaces et Utilitaires ---------- */
+/* =========================
+   TYPES
+========================= */
+
 interface Photo {
   id: string;
   url: string;
@@ -33,196 +36,188 @@ interface PageProps {
 
 type FirestoreDate = Date | Timestamp | null | undefined;
 
-/** Convertit Timestamp en Date standard. */
+interface TagTextDataFromFirestore {
+  tag?: string;
+  title?: string;
+  content?: string;
+  createdAt?: FirestoreDate;
+  updatedAt?: FirestoreDate;
+}
+
+/* =========================
+   UTILS
+========================= */
+
+const normalizeToWebp = (url?: string): string =>
+  url ? url.replace(/\.jpg|\.jpeg|\.png/gi, ".webp") : "/default-placeholder.jpg";
+
 const parseFirestoreDate = (val: FirestoreDate): Date => {
   if (val instanceof Date) return val;
-  if (
-    typeof val === "object" &&
-    val !== null &&
-    "toDate" in val &&
-    typeof (val as { toDate: () => Date }).toDate === "function"
-  ) {
-    return (val as { toDate: () => Date }).toDate();
+  if (val && typeof val === "object" && "toDate" in val) {
+    return (val as Timestamp).toDate();
   }
   return new Date(0);
 };
 
-/* ---------- Composant de carte de photo progressive ---------- */
+/* =========================
+   PROGRESSIVE PHOTO CARD
+   Chargement progressif : Thumbnail → Medium → Full
+========================= */
 
 interface ProgressivePhotoProps {
   photo: Photo;
   onSelect: () => void;
 }
 
-/**
- * Utilise la stratégie de chargement progressif : Miniature (floue) -> Moyenne résolution -> Haute résolution.
- * Le composant original était déjà très bien conçu pour cela.
- */
 function ProgressivePhoto({ photo, onSelect }: ProgressivePhotoProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [mediumLoaded, setMediumLoaded] = useState(false);
   const [fullLoaded, setFullLoaded] = useState(false);
 
-  // Intersection Observer pour ne charger que lorsque visible (Lazy Loading)
   useEffect(() => {
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVisible(true);
-        obs.disconnect();
-      }
-    });
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: "100px" }
+    );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, []);
+
+  const thumbnailSrc = normalizeToWebp(photo.thumbnailUrl || photo.mediumUrl || photo.url);
+  const mediumSrc = normalizeToWebp(photo.mediumUrl || photo.url);
+  const fullSrc = normalizeToWebp(photo.url);
 
   return (
     <div
       ref={ref}
       onClick={onSelect}
-      className="break-inside-avoid relative cursor-pointer overflow-hidden bg-gray-100 group hover:scale-[1.02] transition-transform duration-300 hover:shadow-xl"
+      className="relative cursor-pointer overflow-hidden bg-gray-100 rounded-lg shadow-sm group hover:shadow-xl transition-all duration-300 aspect-[3/2]"
     >
-      {/* Fallback/Thumbnail */}
-      <Image
-        width={800} // Ajusté pour des tailles communes
-        height={600}
-        src={photo.thumbnailUrl || photo.mediumUrl || photo.url}
-        alt={photo.description}
-        className="w-full h-auto transition-opacity duration-700"
-        style={{
-          opacity: visible ? (mediumLoaded ? 0 : 1) : 0,
-          filter: "blur(10px)",
-          transform: "scale(1.05)",
-        }}
-        loading="lazy"
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      />
-
-      {/* Medium version */}
+      {/* Thumbnail (blur) */}
       {visible && (
         <Image
-          width={800}
-          height={600}
-          src={photo.mediumUrl || photo.url}
+          src={thumbnailSrc}
           alt={photo.description}
-          className="w-full h-auto absolute inset-0 transition-opacity duration-700"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-opacity duration-500"
+          style={{
+            opacity: mediumLoaded ? 0 : 1,
+            filter: "blur(8px)",
+            transform: "scale(1.05)",
+          }}
+          loading="lazy"
+        />
+      )}
+
+      {/* Medium resolution */}
+      {visible && (
+        <Image
+          src={mediumSrc}
+          alt={photo.description}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-all duration-500"
           onLoad={() => setMediumLoaded(true)}
           style={{
             opacity: mediumLoaded ? (fullLoaded ? 0 : 1) : 0,
             filter: mediumLoaded ? "blur(0px)" : "blur(4px)",
           }}
           loading="lazy"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
       )}
 
-      {/* Full HD version */}
+      {/* Full resolution */}
       {visible && (
         <Image
-          width={1600}
-          height={1200}
-          src={photo.url}
+          src={fullSrc}
           alt={photo.description}
-          className="w-full h-auto absolute inset-0 transition-opacity duration-700"
-          onLoad={() => setFullLoaded(true)}
-          style={{
-            opacity: fullLoaded ? 1 : 0,
-            filter: fullLoaded ? "blur(0px)" : "blur(2px)",
-          }}
-          loading="lazy"
+          fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-all duration-500 group-hover:scale-105"
+          onLoad={() => setFullLoaded(true)}
+          style={{ opacity: fullLoaded ? 1 : 0 }}
+          loading="lazy"
         />
       )}
-      {/* Overlay au survol */}
-      <div className="absolute inset-0 bg-black/10 transition-colors duration-300 opacity-0 group-hover:opacity-100 flex items-center justify-center">
-      </div>
+
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
     </div>
   );
 }
 
+/* =========================
+   LIGHTBOX COMPONENTS
+========================= */
 
-/* ---------- Composants de la Lightbox (Carrousel Amélioré) ---------- */
+/* =========================
+   LIGHTBOX - CAROUSEL FRAME
+   Même taille pour toutes les images avec padding 1em
+========================= */
 
-interface AdjacentPhotoProps {
-    photo: Photo;
-    position: 'prev' | 'next';
-}
-
-/** Composant pour les photos adjacentes, optimisé pour l'aperçu. */
-const AdjacentPhoto: React.FC<AdjacentPhotoProps> = ({ photo, position }) => (
-    <div
-        className={`absolute hidden lg:flex items-center justify-center ${
-            position === 'prev' ? 'left-0' : 'right-0'
-        } w-[15vw] h-full transition-opacity duration-300`}
-    >
-      <Image
-          width={400}
-          height={400}
-          src={photo.thumbnailUrl || photo.mediumUrl || photo.url}
-          alt={`Aperçu de la photo ${position}`}
-          className="object-contain"
-          style={{ maxHeight: "60vh" }}
-          draggable={false}
-          priority={false}
-      />
-    </div>
-);
-
-interface LightboxPhotoProps {
-    photo: Photo;
-    zoom: number;
-    description: string;
-}
-
-/** Composant pour la photo principale de la Lightbox. */
-const LightboxPhoto: React.FC<LightboxPhotoProps> = ({ photo, zoom, description }) => (
+/* Image principale - grande et haute qualité */
+const MainFrame: React.FC<{ photo: Photo; zoom: number }> = ({ photo, zoom }) => (
+  <div className="relative w-[60vw] h-[70vh] max-w-[1200px] max-h-[800px] mx-[1em]">
     <Image
-        width={1920}
-        height={1080}
-        src={photo.url} // Utiliser l'URL complète
-        alt={description}
-        className="object-contain cursor-grab transition-transform duration-300 ease-out z-10"
-        style={{
-            transform: `scale(${zoom})`,
-            maxWidth: "90vw",
-            maxHeight: "90vh",
-            width: "auto",
-            height: "auto",
-        }}
-        draggable={false}
-        priority={true} // Prioriser l'image affichée
-        sizes="90vw"
+      src={normalizeToWebp(photo.url)}
+      alt={photo.description}
+      fill
+      className="object-contain transition-transform duration-300 ease-out"
+      style={{ transform: `scale(${zoom})` }}
+      priority
+      sizes="(max-width: 1024px) 90vw, 60vw"
+      quality={90}
+      draggable={false}
     />
+  </div>
 );
 
+/* Aperçus latéraux - même ratio mais plus petits */
+const SideFrame: React.FC<{ photo: Photo; onClick: () => void }> = ({ photo, onClick }) => (
+  <div
+    onClick={onClick}
+    className="hidden lg:block relative w-[15vw] max-w-[280px] aspect-[3/2] mx-[1em] opacity-50 hover:opacity-80 cursor-pointer transition-all duration-300"
+    style={{ filter: "blur(1px)" }}
+  >
+    <Image
+      src={normalizeToWebp(photo.mediumUrl || photo.url)}
+      alt={photo.description}
+      fill
+      className="object-cover rounded-sm"
+      sizes="15vw"
+      draggable={false}
+    />
+  </div>
+);
 
+/* =========================
+   PAGE PRINCIPALE
+========================= */
 
-/* ---------- Page principale ---------- */
 export default function PhotosByTagPage({ params }: PageProps) {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [, setTagTextData] = useState<TagText | null>(null);
+  const [tagTextData, setTagTextData] = useState<TagText | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const selectedPhoto = selectedIndex !== null ? photos[selectedIndex] : null;
-
   const [zoom, setZoom] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
 
-  // Utilisation de useMemo pour décoder le tag une seule fois
   const { tag: rawTag } = use(params);
   const tag = useMemo(() => decodeURIComponent(rawTag), [rawTag]);
 
-  interface TagTextDataFromFirestore {
-  tag?: string;
-  title?: string;
-  content?: string;
-  createdAt?: FirestoreDate; 
-  updatedAt?: FirestoreDate;
-}
+  const selectedPhoto = selectedIndex !== null ? photos[selectedIndex] : null;
 
-  /* ---------- Charger données Firestore ---------- */
+  /* ================= FETCH ================= */
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -246,23 +241,18 @@ export default function PhotosByTagPage({ params }: PageProps) {
           };
         });
 
-        // Tri optionnel des photos ici si nécessaire (ex: par date de création)
         setPhotos(filteredPhotos);
 
         if (!textSnap.empty) {
           const doc = textSnap.docs[0];
-          // FIX: Use the specific interface instead of Record<string, any>
-          const data = doc.data() as TagTextDataFromFirestore; 
-          
+          const data = doc.data() as TagTextDataFromFirestore;
+
           setTagTextData({
             id: doc.id,
             tag: data.tag ?? tag,
-            // FIX: The type assertion (data.title as string) is no longer strictly necessary 
-            // but can be kept for clarity if your linter allows it, or simply rely on the interface.
             title: data.title ?? tag.replaceAll("-", " "),
             content: data.content ?? "",
-            // FIX: No need for explicit type casting of data.createdAt/updatedAt
-            createdAt: parseFirestoreDate(data.createdAt), 
+            createdAt: parseFirestoreDate(data.createdAt),
             updatedAt: parseFirestoreDate(data.updatedAt),
           });
         }
@@ -273,74 +263,89 @@ export default function PhotosByTagPage({ params }: PageProps) {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [tag]);
 
-  /* ---------- Navigation lightbox (Memoized) ---------- */
-  const handleNavigate = useCallback((direction: 1 | -1) => {
-    if (selectedIndex === null || photos.length === 0) return;
-    setDirection(direction);
-    setSelectedIndex((i) => {
-      const newIndex = ((i! + direction) + photos.length) % photos.length;
-      return newIndex;
-    });
-    setZoom(1); // Reset zoom at each slide change
-  }, [selectedIndex, photos.length]);
+  /* ================= NAVIGATION ================= */
 
-  const handlePrevPhoto = useCallback(() => handleNavigate(-1), [handleNavigate]);
-  const handleNextPhoto = useCallback(() => handleNavigate(1), [handleNavigate]);
+  const navigate = useCallback(
+    (dir: 1 | -1) => {
+      if (selectedIndex === null || photos.length === 0) return;
+      setDirection(dir);
+      setSelectedIndex((selectedIndex + dir + photos.length) % photos.length);
+      setZoom(1);
+    },
+    [selectedIndex, photos.length]
+  );
 
+  const handlePrev = useCallback(() => navigate(-1), [navigate]);
+  const handleNext = useCallback(() => navigate(1), [navigate]);
 
-  /* ---------- Raccourcis clavier (Amélioré) ---------- */
+  const closeLightbox = useCallback(() => {
+    setSelectedIndex(null);
+    setZoom(1);
+  }, []);
+
+  /* ================= KEYBOARD ================= */
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedIndex === null) return;
-      e.preventDefault(); // Empêche le défilement du navigateur pour les touches de navigation
-      
+
       switch (e.key) {
         case "ArrowLeft":
-          handlePrevPhoto();
+          e.preventDefault();
+          handlePrev();
           break;
         case "ArrowRight":
-          handleNextPhoto();
+          e.preventDefault();
+          handleNext();
           break;
         case "Escape":
-          setSelectedIndex(null);
-          setZoom(1);
+          closeLightbox();
           break;
         case "+":
         case "=":
-          setZoom((z) => Math.min(z + 0.3, 3));
+          e.preventDefault();
+          setZoom((z) => Math.min(z + 0.25, 3));
           break;
         case "-":
         case "_":
-          setZoom((z) => Math.max(z - 0.3, 1));
+          e.preventDefault();
+          setZoom((z) => Math.max(z - 0.25, 1));
           break;
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIndex, handlePrevPhoto, handleNextPhoto]);
+  }, [selectedIndex, handlePrev, handleNext, closeLightbox]);
 
-  /* ---------- Skeleton de chargement ---------- */
+  /* ================= ANIMATION VARIANTS ================= */
+
+  const slideVariants = {
+    enter: (d: number) => ({ x: d > 0 ? 100 : -100, opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } },
+    exit: (d: number) => ({ x: d < 0 ? 100 : -100, opacity: 0, transition: { duration: 0.2 } }),
+  };
+
+  /* ================= LOADING STATE ================= */
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-white px-6 py-12 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="aspect-[4/3] bg-gray-200 rounded-lg" />
-        ))}
+      <div className="min-h-screen bg-white px-6 py-24">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="bg-gray-200 rounded-lg aspect-[3/2] animate-pulse" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  /* ---------- Variants d’animation (Simplifiés) ---------- */
-  const slideVariants = {
-    enter: (dir: 1 | -1) => ({ opacity: 0, x: dir > 0 ? 50 : -50 }),
-    center: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-    exit: (dir: 1 | -1) => ({ opacity: 0, x: dir < 0 ? 50 : -50, transition: { duration: 0.2 } }),
-  };
+  /* ================= RENDER ================= */
 
-  /* ---------- Rendu principal ---------- */
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -348,116 +353,189 @@ export default function PhotosByTagPage({ params }: PageProps) {
         <div className="max-w-7xl mx-auto">
           <Link
             href="/photo"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black uppercase tracking-wider transition-colors font-light mb-4"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-black uppercase tracking-wider transition-colors font-light"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to Collections
           </Link>
+
+          {/* Tag title if available */}
+          {tagTextData && (
+            <div className="mt-8">
+              <h1 className="text-3xl md:text-4xl font-light text-gray-900 capitalize">
+                {tagTextData.title}
+              </h1>
+              {tagTextData.content && (
+                <p className="mt-4 text-gray-600 max-w-2xl font-light leading-relaxed">
+                  {tagTextData.content}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Grille Masonry */}
-      <div className="px-4 md:px-6 py-8">
+      {/* Photo Grid */}
+      <main className="px-4 md:px-6 py-8">
         <div className="max-w-7xl mx-auto">
           {error && (
-            <div className="text-center p-4 bg-red-100 text-red-700 rounded-lg">
-                {error}
+            <div className="text-center p-4 bg-red-100 text-red-700 rounded-lg mb-8">
+              {error}
             </div>
           )}
+
           {photos.length > 0 ? (
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {photos.map((photo, i) => (
-                <ProgressivePhoto key={photo.id} photo={photo} onSelect={() => setSelectedIndex(i)} />
+                <ProgressivePhoto
+                  key={photo.id}
+                  photo={photo}
+                  onSelect={() => setSelectedIndex(i)}
+                />
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-24">
-              <p className="text-gray-400 text-lg uppercase tracking-wider font-light">Aucune photo trouvée pour cette collection</p>
+              <p className="text-gray-400 text-lg uppercase tracking-wider font-light">
+                Aucune photo trouvée pour cette collection
+              </p>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Lightbox Modale */}
+      {/* Lightbox */}
       <AnimatePresence>
         {selectedPhoto && selectedIndex !== null && (
           <motion.div
-            className="fixed inset-0 bg-white/95 backdrop-blur-md z-[60] flex items-center justify-center p-2 lg:p-4 overflow-hidden"
+            className="fixed inset-0 bg-white/95 backdrop-blur-md z-50 flex items-center justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            onClick={() => { setSelectedIndex(null); setZoom(1); }}
+            onClick={closeLightbox}
           >
-            {/* Conteneur principal du carrousel */}
+            {/* Main container - carousel with large center and side previews */}
             <div
-              className="relative flex items-center justify-center w-full h-full"
-              onClick={(e) => e.stopPropagation()} // Empêche la fermeture au clic sur la zone de l'image
+              className="relative flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Le conteneur animé de Framer Motion */}
-              <AnimatePresence initial={false} custom={direction} mode="wait">
+              {/* Previous preview */}
+              {photos.length > 1 && (
+                <SideFrame
+                  photo={photos[(selectedIndex - 1 + photos.length) % photos.length]}
+                  onClick={handlePrev}
+                />
+              )}
+
+              {/* Current photo - large and high quality */}
+              <AnimatePresence custom={direction} mode="wait">
                 <motion.div
                   key={selectedIndex}
-                  className="flex items-center justify-center w-full h-full relative"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
                 >
-                  <LightboxPhoto photo={selectedPhoto} zoom={zoom} description={selectedPhoto.description} />
+                  <MainFrame photo={selectedPhoto} zoom={zoom} />
                 </motion.div>
               </AnimatePresence>
 
-              {/* Photos Adjacentes (Optimisé) */}
+              {/* Next preview */}
               {photos.length > 1 && (
-                  <>
-                      <AdjacentPhoto
-                          photo={photos[(selectedIndex - 1 + photos.length) % photos.length]}
-                          position="prev"
-                      />
-                      <AdjacentPhoto
-                          photo={photos[(selectedIndex + 1) % photos.length]}
-                          position="next"
-                      />
-                  </>
+                <SideFrame
+                  photo={photos[(selectedIndex + 1) % photos.length]}
+                  onClick={handleNext}
+                />
               )}
             </div>
 
-            {/* Navigation (Positionnement fixe pour les flèches) */}
+            {/* Navigation buttons */}
             <button
-              onClick={(e) => { e.stopPropagation(); handlePrevPhoto(); }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors z-50 rounded-full bg-white/80 hover:bg-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrev();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
               aria-label="Photo précédente"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
 
             <button
-              onClick={(e) => { e.stopPropagation(); handleNextPhoto(); }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors z-50 rounded-full bg-white/80 hover:bg-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNext();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-gray-500 hover:text-black transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
               aria-label="Photo suivante"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
 
-            {/* Bouton fermer */}
+            {/* Close button */}
             <button
-              onClick={(e) => { e.stopPropagation(); setSelectedIndex(null); setZoom(1); }}
-              className="absolute top-4 right-4 p-3 text-gray-500 hover:text-black transition-colors z-[70] rounded-full bg-white/80 hover:bg-white"
-              aria-label="Fermer la Lightbox"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeLightbox();
+              }}
+              className="absolute top-4 right-4 p-3 text-gray-500 hover:text-black transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
+              aria-label="Fermer"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
-            
-            {/* Infos / Commandes de Zoom */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[70] bg-black/70 text-white text-xs p-2 rounded-full flex items-center space-x-4">
-                <span className="text-gray-300 hidden sm:inline">Photo {selectedIndex + 1} / {photos.length}</span>
-                <span className="text-gray-300">Zoom: {(zoom * 100).toFixed(0)}%</span>
+
+            {/* Zoom controls */}
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoom((z) => Math.max(z - 0.25, 1));
+                }}
+                disabled={zoom <= 1}
+                className="p-2 text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
+                aria-label="Zoom arrière"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+
+              <span className="text-sm text-gray-600 bg-white/80 px-3 py-1 rounded-full min-w-[60px] text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoom((z) => Math.min(z + 0.25, 3));
+                }}
+                disabled={zoom >= 3}
+                className="p-2 text-gray-500 hover:text-black disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-full bg-white/80 hover:bg-white shadow-sm"
+                aria-label="Zoom avant"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
             </div>
 
+            {/* Info bar */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-4 py-2 rounded-full flex items-center gap-4">
+              <span>
+                {selectedIndex + 1} / {photos.length}
+              </span>
+              <span className="text-gray-400 hidden sm:inline">← → naviguer • +/- zoom • Esc fermer</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

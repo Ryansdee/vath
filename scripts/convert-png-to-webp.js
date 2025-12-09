@@ -1,198 +1,89 @@
 import admin from "firebase-admin";
-import sharp from "sharp";
-import fs from "fs/promises";
-import path from "path";
+import fs from "fs";
 
-// -------------------------------
-// 🔥 INITIALISATION FIREBASE
-// -------------------------------
+// =====================================
+// CONFIG
+// =====================================
+const BUCKET = "vath-portofolio.firebasestorage.app";
+const COLLECTION = "photos";
+
+// =====================================
+// INIT FIREBASE ADMIN
+// =====================================
+const serviceAccount = JSON.parse(
+  fs.readFileSync("serviceAccountKey.json", "utf8")
+);
+
 admin.initializeApp({
-  credential: admin.credential.cert("./serviceAccountKey.json"),
-  storageBucket: "vath-portofolio.firebasestorage.app"
+  credential: admin.credential.cert(serviceAccount),
 });
 
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
 
+// =====================================
+// HELPERS
+// =====================================
 
-// -------------------------------------------------------
-// 🔄 FONCTION : remplacer .jpg/.JPG/.jpeg/.JPEG/.png/.PNG par .webp dans Firestore
-// -------------------------------------------------------
-/**
- * Remplace récursivement les extensions d'image (jpg, jpeg, png) par .webp, insensible à la casse.
- * @param {*} data - La donnée à inspecter (String, Array, Object).
- * @returns {*} La donnée avec les extensions mises à jour.
- */
-function replaceExtensionsDeep(data) {
-  // Expression régulière pour .jpg, .jpeg, ou .png (insensible à la casse 'i')
-  const imageExtensionRegex = /\.(jpe?g|png)$/i;
+// Convertit n'importe quelle URL Storage → URL Firebase publique
+function toFirebasePublicUrl(originalUrl) {
+  if (!originalUrl) return null;
 
-  if (typeof data === "string") {
-    // Remplace l'extension correspondante par .webp
-    return data.replace(imageExtensionRegex, ".webp");
-  }
+  // Déjà correcte → on ne touche pas
+  if (originalUrl.includes("firebasestorage.googleapis.com")) {
+    return originalUrl;
+  }
 
-  if (Array.isArray(data)) {
-    return data.map(item => replaceExtensionsDeep(item));
-  }
+  // Extrait le path depuis une URL storage.googleapis.com
+  const match = originalUrl.match(
+    /storage\.googleapis\.com\/[^/]+\/(.+?)(\?|$)/
+  );
 
-  if (data && typeof data === "object" && data !== null) {
-    const out = {};
-    for (const key in data) {
-      // S'assurer que la clé appartient à l'objet (pas un prototype)
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        out[key] = replaceExtensionsDeep(data[key]);
-      }
-    }
-    return out;
-  }
+  if (!match) return originalUrl;
 
-  return data;
+  const objectPath = decodeURIComponent(match[1]);
+  const encodedPath = encodeURIComponent(objectPath);
+
+  return `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${encodedPath}?alt=media`;
 }
 
+// =====================================
+// MAIN
+// =====================================
+async function migrate() {
+  console.log(`🚀 Migration Firestore → ${COLLECTION}`);
+  const snapshot = await db.collection(COLLECTION).get();
 
-// -------------------------------------------------------
-// 🔄 Parcourir récursivement toutes les collections Firestore
-// -------------------------------------------------------
-async function updateFirestoreCollection(path) {
-  const collectionRef = db.collection(path);
-  // Utilisation d'une transaction pour un traitement plus sûr
-  await db.runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(collectionRef);
-    
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const updated = replaceExtensionsDeep(data);
+  let updatedCount = 0;
 
-      if (JSON.stringify(data) !== JSON.stringify(updated)) {
-        console.log(`📝 Firestore mis à jour : ${path}/${doc.id}`);
-        // Utiliser la transaction pour la mise à jour
-        transaction.update(doc.ref, updated);
-      }
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    let changed = false;
 
-      // Sous-collections
-      // NOTE: Les transactions ne supportent pas listCollections. On repasse en mode normal ici.
-      // L'approche ci-dessous est conservée pour la récursivité, même si l'idéal serait de séparer
-      // la logique de transaction et la logique de parcours récursif.
-      const subCollections = await doc.ref.listCollections();
-      for (const sub of subCollections) {
-        await updateFirestoreCollection(`${path}/${doc.id}/${sub.id}`);
-      }
-    }
-  });
+    const updatedFields = {};
+
+    for (const field of ["url", "mediumUrl", "thumbnailUrl"]) {
+      if (typeof data[field] === "string") {
+        const fixed = toFirebasePublicUrl(data[field]);
+        if (fixed !== data[field]) {
+          updatedFields[field] = fixed;
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      await doc.ref.update(updatedFields);
+      updatedCount++;
+      console.log(`✅ ${doc.id} mis à jour`);
+    }
+  }
+
+  console.log(`🎉 Terminé : ${updatedCount} documents corrigés`);
 }
 
-
-// -------------------------------------------------------
-// 🔧 Fonction Windows-safe pour supprimer un fichier
-// -------------------------------------------------------
-async function safeUnlink(filePath) {
-  try {
-    await fs.unlink(filePath);
-  } catch (err) {
-    // Ignorer si le fichier n'existe pas (Enoent)
-    if (err.code === "ENOENT") return; 
-
-    // Gérer les erreurs de permission (EPERM) en réessayant
-    if (err.code === "EPERM") {
-      for (let i = 0; i < 5; i++) {
-        await new Promise(r => setTimeout(r, 100 + i * 150));
-        try {
-          await fs.unlink(filePath);
-          return;
-        } catch (retryErr) {
-          if (retryErr.code !== "EPERM") throw retryErr;
-        }
-      }
-      console.warn("⚠️ Impossible de supprimer après plusieurs tentatives:", filePath);
-      return; // Évite de lancer une erreur fatale
-    }
-    
-    throw err;
-  }
-}
-
-
-// -------------------------------------------------------
-// 🖼️ Conversion Storage : JPG/PNG → WEBP
-// -------------------------------------------------------
-async function convertStorageImages() {
-  console.log("📸 Scan du dossier /photos dans Firebase Storage…");
-
-  // Regex pour vérifier et capturer l'extension (insensible à la casse)
-  const fileExtensionCheck = /\.(jpe?g|png)$/i;
-  const [files] = await bucket.getFiles({ prefix: "photos/" });
-
-  for (const file of files) {
-    const name = file.name;
-
-    // Condition pour n'inclure que les fichiers JPG, JPEG, ou PNG
-    if (!fileExtensionCheck.test(name)) continue;
-
-    // Remplacer l'extension originale par une chaîne vide, insensible à la casse
-    const base = name.replace(fileExtensionCheck, ""); 
-
-    // On utilise un chemin temporaire pour le fichier original
-    const tempInput = path.join(process.cwd(), `tmp_input_${path.basename(name)}`);
-    // On utilise un chemin temporaire pour le fichier WebP converti
-    const tempOutput = path.join(process.cwd(), `tmp_output_${path.basename(base)}.webp`);
-
-    console.log(`➡️ Conversion Storage : ${name}`);
-
-    try {
-      // Télécharger l’original
-      await file.download({ destination: tempInput });
-
-      // Conversion en WebP
-      await sharp(tempInput)
-        .webp({ quality: 80 })
-        .toFile(tempOutput);
-
-      // Upload WebP
-      await bucket.upload(tempOutput, {
-        destination: `${base}.webp`, // Utilise le chemin sans l'ancienne extension
-        metadata: { contentType: "image/webp" }
-      });
-
-      // Supprimer l'ancien
-      await file.delete();
-
-      console.log(`✅ ${name} → ${base}.webp`);
-    } catch (error) {
-      console.error(`❌ Échec de la conversion pour ${name}:`, error.message);
-    } finally {
-      // Nettoyage local (doit être fait même en cas d'erreur)
-      await safeUnlink(tempInput);
-      await safeUnlink(tempOutput);
-    }
-  }
-
-  console.log("🏁 Storage Converti !");
-}
-
-
-// -------------------------------------------------------
-// 🚀 EXÉCUTION GLOBALE
-// -------------------------------------------------------
-async function run() {
-  console.log("🔎 Mise à jour Firestore (jpg/jpeg/png → webp)…");
-
-  const rootCollections = await db.listCollections();
-  for (const col of rootCollections) {
-    await updateFirestoreCollection(col.id);
-  }
-
-  console.log("🎉 Firestore mis à jour !");
-  
- 
-
-  console.log("🔧 Conversion Storage…");
-  await convertStorageImages();
-
-  console.log("🏆 Tout est terminé !");
-}
-
-run().catch(error => {
-  console.error("Une erreur fatale est survenue durant l'exécution:", error);
-  process.exit(1);
-});
+migrate()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error("❌ Erreur critique :", err);
+    process.exit(1);
+  });
