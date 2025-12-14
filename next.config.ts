@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /**
+   * Turbopack est explicitement activé
+   * (obligatoire en Next 16 dès qu'on enlève Webpack)
+   */
+  turbopack: {},
+
   images: {
     // Autorise les domaines externes pour les images (Firebase, YouTube, Vimeo, etc.)
     remotePatterns: [
@@ -31,24 +37,19 @@ const nextConfig: NextConfig = {
       },
     ],
 
-    // Formats supportés
     formats: ["image/webp"],
-
-    // Tailles pour images responsives
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-
-    // Cache et optimisation
     minimumCacheTTL: 60,
     unoptimized: false,
   },
 
   // Expérimental : augmente les timeouts pour les routes API & optimisations
   experimental: {
-    proxyTimeout: 120000, // 2 minutes
+    proxyTimeout: 120000,
   },
 
-  // Caching headers intelligents
+  // Headers de cache
   async headers() {
     return [
       {
@@ -72,29 +73,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
-  // Webpack : optimisations pour la prod
-webpack: (config, { dev, isServer }) => {
-  if (!dev && !isServer) {
-    config.optimization = {
-      ...config.optimization,
-      splitChunks: {
-        chunks: "all",
-        cacheGroups: {
-          default: false,
-          vendors: false,
-          commons: {
-            name: "commons",
-            chunks: "all",
-            minChunks: 2,
-          },
-        },
-      },
-    };
-  }
-  return config;
-},
-
 };
 
 export default nextConfig;
