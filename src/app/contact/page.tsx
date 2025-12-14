@@ -22,10 +22,24 @@ const stepVariants = {
 
 // Variants pour la modale de succès
 const modalVariants = {
-    hidden: { opacity: 0, scale: 0.9, y: 20 },
-    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
-    exit: { opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.2 } },
+  hidden: { opacity: 0, scale: 0.9, y: 20 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    y: 10,
+    transition: { duration: 0.2 },
+  },
 };
+
 
 const backdropVariants = {
     hidden: { opacity: 0 },
