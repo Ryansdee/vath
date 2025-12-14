@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "scontent-bru2-1.cdninstagram.com",
+      },
+      {
+        protocol: "https",
         hostname: "firebasestorage.googleapis.com",
         pathname: "/**",
       },
