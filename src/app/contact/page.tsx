@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 type ServiceType = "photography" | "videography" | "direction" | "general" | "portal";
 
@@ -14,11 +14,20 @@ interface FormData {
 }
 
 // Variants pour l'apparition des étapes (transition douce)
-const stepVariants = {
+const stepVariants: Variants = {
   initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-  exit: { opacity: 0, y: -10, transition: { duration: 0.3 } },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: { duration: 0.3 },
+  },
 };
+
 
 // Variants pour la modale de succès
 const modalVariants = {
