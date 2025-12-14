@@ -178,7 +178,7 @@ const MainFrame = ({ photo, zoom }: { photo: Photo; zoom: number }) => (
 const SideFrame = ({ photo, onClick }: { photo: Photo; onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="hidden lg:block relative w-[30vw] max-w-[560px] aspect-[3/2] opacity-40 hover:opacity-70 cursor-pointer transition-all duration-300"
+    className="hidden lg:block relative w-150 aspect-[4/3] opacity-40 hover:opacity-70 cursor-pointer transition-all duration-300"
     style={{ filter: "blur(1px)", zIndex: 0, marginLeft: -20 }}
   >
     <Image

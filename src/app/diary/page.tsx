@@ -204,7 +204,7 @@ export default function PhotosPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-24">
                 <p className="text-gray-400 text-base uppercase tracking-wider text-center font-light">
-                  Aucune photo disponible
+                  No Dairy archives found yet.
                 </p>
               </div>
             )}
