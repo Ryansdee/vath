@@ -166,7 +166,7 @@ const MainFrame = ({ photo, zoom }: { photo: Photo; zoom: number }) => (
       alt={photo.description}
       fill
       className="object-contain transition-transform duration-300 ease-out"
-      style={{ transform: `scale(${zoom})` }}
+      style={{ transform: `scale(${zoom})`, zIndex: 1 }}
       priority
       sizes="(max-width: 1024px) 90vw, 60vw"
       quality={90}
@@ -178,8 +178,8 @@ const MainFrame = ({ photo, zoom }: { photo: Photo; zoom: number }) => (
 const SideFrame = ({ photo, onClick }: { photo: Photo; onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="hidden lg:block relative w-[15vw] max-w-[280px] aspect-[3/2] mx-4 opacity-40 hover:opacity-70 cursor-pointer transition-all duration-300"
-    style={{ filter: "blur(1px)" }}
+    className="hidden lg:block relative w-[30vw] max-w-[560px] aspect-[3/2] opacity-40 hover:opacity-70 cursor-pointer transition-all duration-300"
+    style={{ filter: "blur(1px)", zIndex: 0, marginLeft: -20 }}
   >
     <Image
       src={normalizeToWebp(photo.mediumUrl || photo.url)}
@@ -369,19 +369,6 @@ export default function PhotosByTagPage({ params }: PageProps) {
             </svg>
             Back to Collections
           </Link>
-
-          {tagText && (
-            <div className="mt-8">
-              <h1 className="text-3xl md:text-4xl font-light text-gray-900 capitalize">
-                {tagText.title}
-              </h1>
-              {tagText.content && (
-                <p className="mt-4 text-gray-600 max-w-2xl font-light leading-relaxed">
-                  {tagText.content}
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
@@ -538,7 +525,7 @@ export default function PhotosByTagPage({ params }: PageProps) {
             </div>
 
             {/* Info bar */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-4 py-2 rounded-full flex items-center gap-4">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white text-xs px-4 py-2 rounded-full flex items-center gap-4 z-10">
               <span>
                 {selectedIndex + 1} / {photos.length}
               </span>
