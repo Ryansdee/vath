@@ -74,26 +74,27 @@ const nextConfig: NextConfig = {
   },
 
   // Webpack : optimisations pour la prod
-  webpack: (config, { dev, isServer }) => {
-    if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: "all",
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            commons: {
-              name: "commons",
-              chunks: "all",
-              minChunks: 2,
-            },
+webpack: (config, { dev, isServer }) => {
+  if (!dev && !isServer) {
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: "all",
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          commons: {
+            name: "commons",
+            chunks: "all",
+            minChunks: 2,
           },
         },
-      };
-    }
-    return config;
-  },
+      },
+    };
+  }
+  return config;
+},
+
 };
 
 export default nextConfig;
