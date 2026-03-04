@@ -52,7 +52,7 @@ const textColor = isOpen
   const hoverColor = isLight ? "hover:text-black" : "hover:text-white";
 
   return (
-    <nav className="top-0 left-0 right-0 z-50 bg-transparent absolute">
+    <nav className="top-0 left-0 right-0 z-50 bg-transparent absolute navbar">
       <div className="flex items-center justify-between h-16 px-4 max-w-7xl mx-auto">
         {/* Burger menu - Mobile */}
         <button

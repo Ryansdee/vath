@@ -25,7 +25,7 @@ export default function Footer() {
         }
       `}</style>
       
-      <footer className="relative bg-white border-t border-gray-100">
+      <footer className="relative bg-white border-t border-gray-100 footer">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-3 gap-12 md:gap-8 items-start md:items-center animate-fadeInUp">
             
