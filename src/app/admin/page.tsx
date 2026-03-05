@@ -37,7 +37,9 @@ export default function AdminUploadPage() {
   const [previewModal, setPreviewModal] = useState<{ src: string; index: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [videoThumbnail, setVideoThumbnail] = useState<{ file: File; preview: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
 
   const categories: { value: Category; label: string; icon: JSX.Element }[] = [
     { value: "photo", label: "Photo", icon: <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
@@ -106,8 +108,16 @@ export default function AdminUploadPage() {
     const tagList = tags.split(",").map((t) => t.trim().replaceAll(" ", "-")).filter(Boolean);
 
     if (category === "video" && videoUrl) {
-      await addDoc(collection(db, "videos"), { url: normalizeVideoUrl(videoUrl), thumbnail: getYoutubeThumbnail(videoUrl), description, tags: tagList, createdAt: new Date(), type: "embed" });
-      alert("✅ Lien vidéo ajouté !"); setVideoUrl(""); setDescription(""); setTags(""); setUploading(false); return;
+      let thumbnailUrl = getYoutubeThumbnail(videoUrl);
+      // Upload custom thumbnail if provided
+      if (videoThumbnail) {
+        const thumbName = `${Date.now()}_thumb_${videoThumbnail.file.name.replace(/\s+/g, "_")}`;
+        const thumbRef = ref(storage, `thumbnails/${thumbName}`);
+        await uploadBytes(thumbRef, videoThumbnail.file);
+        thumbnailUrl = await getDownloadURL(thumbRef);
+      }
+      await addDoc(collection(db, "videos"), { url: normalizeVideoUrl(videoUrl), thumbnail: thumbnailUrl, description, tags: tagList, createdAt: new Date(), type: "youtube" });
+      alert("✅ Lien vidéo ajouté !"); setVideoUrl(""); setDescription(""); setTags(""); setVideoThumbnail(null); setUploading(false); return;
     }
     if (category === "video" && files.length === 1 && files[0].file?.type.startsWith("video/")) {
       const file = files[0].file!;
@@ -115,8 +125,15 @@ export default function AdminUploadPage() {
       const videoRef = ref(storage, `videos/${name}`);
       await uploadBytes(videoRef, file);
       const url = await getDownloadURL(videoRef);
-      await addDoc(collection(db, "videos"), { url, description, tags: tagList, createdAt: new Date(), type: "mp4" });
-      alert("✅ Vidéo uploadée !"); setFiles([]); setDescription(""); setTags(""); setUploading(false); return;
+      let thumbnailUrl = "";
+      if (videoThumbnail) {
+        const thumbName = `${Date.now()}_thumb_${videoThumbnail.file.name.replace(/\s+/g, "_")}`;
+        const thumbRef = ref(storage, `thumbnails/${thumbName}`);
+        await uploadBytes(thumbRef, videoThumbnail.file);
+        thumbnailUrl = await getDownloadURL(thumbRef);
+      }
+      await addDoc(collection(db, "videos"), { url, thumbnail: thumbnailUrl || undefined, description, tags: tagList, createdAt: new Date(), type: "mp4" });
+      alert("✅ Vidéo uploadée !"); setFiles([]); setVideoThumbnail(null); setDescription(""); setTags(""); setUploading(false); return;
     }
     if (files.length === 0) { alert("Ajoutez des fichiers d'abord."); setUploading(false); return; }
 
@@ -276,6 +293,61 @@ export default function AdminUploadPage() {
                       <iframe style={{ width: "100%", aspectRatio: "16/9", border: "none", display: "block" }} src={normalizeVideoUrl(videoUrl)} allowFullScreen />
                     </div>
                   )}
+
+                  {/* Thumbnail */}
+                  <div className="mt-4 pt-4 border-t border-[#1a1a1a]">
+                    <span className="text-[10px] text-[#444] tracking-[0.15em] uppercase mb-3 block">
+                      Thumbnail personnalisé <span className="text-[#2e2e2e]">· optionnel</span>
+                    </span>
+                    <input
+                      ref={thumbInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = () => setVideoThumbnail({ file, preview: reader.result as string });
+                        reader.readAsDataURL(file);
+                        e.target.value = "";
+                      }}
+                    />
+                    {videoThumbnail ? (
+                      <div className="relative aspect-video max-w-xs rounded-md overflow-hidden border border-[#1e1e1e] group cursor-pointer" onClick={() => thumbInputRef.current?.click()}>
+                        <Image src={videoThumbnail.preview} alt="Thumbnail" fill style={{ objectFit: "cover" }} className="group-hover:opacity-60 transition-opacity" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[10px] tracking-[0.1em] uppercase text-[#ccc] bg-black/70 px-3 py-1.5 rounded">Changer</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setVideoThumbnail(null); }}
+                          className="absolute top-2 right-2 w-6 h-6 bg-black/80 border border-[#3a3a3a] rounded-full text-[#bbb] text-[15px] flex items-center justify-center cursor-pointer font-sans leading-none p-0 border-none"
+                        >×</button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => thumbInputRef.current?.click()}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && thumbInputRef.current?.click()}
+                        className="flex items-center gap-3 px-4 py-3 border border-dashed border-[#222] rounded-md bg-[#0d0d0d] hover:border-[#3a3a3a] hover:bg-[#111] cursor-pointer transition-colors outline-none group"
+                      >
+                        <svg width="16" height="16" className="stroke-[#333] group-hover:stroke-[#555] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[12px] text-[#3a3a3a] group-hover:text-[#666] transition-colors">
+                          Ajouter un thumbnail personnalisé
+                        </span>
+                        <span className="ml-auto text-[10px] text-[#2a2a2a] tracking-[0.08em] uppercase group-hover:text-[#444] transition-colors">
+                          JPG · PNG · WEBP
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

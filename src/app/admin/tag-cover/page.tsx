@@ -3,29 +3,26 @@
 import { useEffect, useState } from "react";
 import { db } from "../../../../lib/firebase";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc,
-  setDoc,
+  collection, getDocs, query, where,
+  doc, getDoc, setDoc,
 } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Photo {
-  id: string;
-  url: string;
-  thumbnailUrl?: string;
-  description?: string;
-  tags: string[];
+  id: string; url: string; thumbnailUrl?: string;
+  description?: string; tags: string[];
 }
 
-interface TagInfo {
-  tag: string;
-  count: number;
-}
+interface TagInfo { tag: string; count: number; }
+
+const globalStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+  .font-serif-display { font-family: 'DM Serif Display', serif; }
+  .font-dm { font-family: 'DM Sans', sans-serif; }
+  @keyframes spin-tc { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .spin-tc { animation: spin-tc 0.8s linear infinite; }
+`;
 
 export default function AdminTagCoverPage() {
   const [tags, setTags] = useState<TagInfo[]>([]);
@@ -36,75 +33,43 @@ export default function AdminTagCoverPage() {
   const [loading, setLoading] = useState(true);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Charger tous les tags disponibles
   useEffect(() => {
     const fetchTags = async () => {
       try {
         const snapshot = await getDocs(collection(db, "photos"));
-        const photosData = snapshot.docs.map((doc) => doc.data() as Photo);
         const tagCount = new Map<string, number>();
-
-        photosData.forEach((photo) => {
-          photo.tags.forEach((tag) => {
-            tagCount.set(tag, (tagCount.get(tag) || 0) + 1);
-          });
+        snapshot.docs.forEach((d) => {
+          (d.data() as Photo).tags.forEach((tag) => tagCount.set(tag, (tagCount.get(tag) || 0) + 1));
         });
-
-        const tagList: TagInfo[] = Array.from(tagCount.entries()).map(
-          ([tag, count]) => ({ tag, count })
-        );
-
-        setTags(tagList.sort((a, b) => a.tag.localeCompare(b.tag)));
-      } catch (err) {
-        console.error("Erreur lors du chargement des tags:", err);
-      } finally {
-        setLoading(false);
-      }
+        setTags(Array.from(tagCount.entries()).map(([tag, count]) => ({ tag, count })).sort((a, b) => a.tag.localeCompare(b.tag)));
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
     };
     fetchTags();
   }, []);
 
-  // Charger les images d’un tag sélectionné
   const loadPhotosForTag = async (tag: string) => {
-    setSelectedTag(tag);
-    setPhotos([]);
-    setLoadingPhotos(true);
-    setSelectedImage(null);
+    setSelectedTag(tag); setPhotos([]); setLoadingPhotos(true); setSelectedImage(null);
     try {
       const q = query(collection(db, "photos"), where("tags", "array-contains", tag));
       const snapshot = await getDocs(q);
-      const photoList: Photo[] = snapshot.docs.map((doc) => {
-        const data = doc.data() as Photo;
-        return {
-          ...data,
-          id: doc.id,
-        };
-      });
-      setPhotos(photoList);
-
-      // Charger la cover actuelle
+      setPhotos(snapshot.docs.map((d) => ({ ...(d.data() as Photo), id: d.id })));
       const tagDoc = await getDoc(doc(db, "tagTexts", tag));
-      if (tagDoc.exists()) {
-        setCurrentCover(tagDoc.data().mainImage || null);
-      } else setCurrentCover(null);
-    } catch (err) {
-      console.error("Erreur lors du chargement des images du tag:", err);
-    } finally {
-      setLoadingPhotos(false);
-    }
+      setCurrentCover(tagDoc.exists() ? tagDoc.data().mainImage || null : null);
+    } catch (e) { console.error(e); }
+    finally { setLoadingPhotos(false); }
   };
 
-  // Sauvegarde de la nouvelle image principale
   const handleSave = async () => {
     if (!selectedImage || !selectedTag) return alert("Choisis une image !");
     setSaving(true);
     try {
       const tagRef = doc(db, "tagTexts", selectedTag);
       const oldDoc = await getDoc(tagRef);
-      const oldData = oldDoc.exists() ? oldDoc.data() : {};
       await setDoc(tagRef, {
-        ...oldData,
+        ...(oldDoc.exists() ? oldDoc.data() : {}),
         tag: selectedTag,
         title: selectedTag.replaceAll("-", " "),
         mainImage: selectedImage,
@@ -112,162 +77,226 @@ export default function AdminTagCoverPage() {
       });
       setCurrentCover(selectedImage);
       setSelectedImage(null);
-    } catch (err) {
-      console.error("Erreur de sauvegarde:", err);
-      alert("❌ Erreur de sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    } catch (e) { console.error(e); alert("Erreur de sauvegarde."); }
+    finally { setSaving(false); }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        <p>Chargement des tags...</p>
-      </div>
-    );
-  }
+  const navLinks = [
+    { href: "/admin", label: "Upload", icon: <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> },
+    { href: "/admin/portal", label: "Portails", icon: <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg> },
+    { href: "/admin/texts", label: "Textes", icon: <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> },
+    { href: "/admin/home-image", label: "Page d'accueil", icon: <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 flex flex-col items-center py-16">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] overflow-hidden border border-gray-300">
-        {/* Barre macOS */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-100 border-b border-gray-200">
-          <div className="flex gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500"></span>
-            <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
-            <span className="w-3 h-3 rounded-full bg-green-500"></span>
-          </div>
-          <h1 className="text-sm text-gray-600 font-medium">
-            Admin • Tag Cover Manager
-          </h1>
-          <div className="w-12" />
-        </div>
+    <>
+      <style>{globalStyles}</style>
 
-        {/* Contenu principal */}
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <Link
-              href="/admin"
-              className="text-sm text-gray-500 hover:text-black transition"
-            >
-              ← Retour
+      <div className="font-dm bg-[#0a0a0a] min-h-screen text-[#e8e4dc]">
+
+        {/* ── Mobile overlay ── */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        {/* ── Sidebar ── */}
+        <aside className={`fixed top-0 left-0 h-full w-[220px] bg-[#111] border-r border-[#1e1e1e] flex flex-col z-50 transition-transform duration-200 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
+          <div className="px-5 pt-7 pb-5 border-b border-[#1e1e1e] flex-shrink-0">
+            <p className="font-serif-display text-[17px] tracking-[0.04em] text-white leading-tight">Vadim Thevelin</p>
+            <span className="text-[9px] tracking-[0.18em] uppercase text-[#444] mt-1 block">Administration</span>
+          </div>
+          <nav className="flex-1 px-2.5 py-4 flex flex-col gap-0.5 overflow-y-auto">
+            <p className="text-[9px] tracking-[0.2em] uppercase text-[#3a3a3a] px-2.5 mt-2 mb-1.5">Navigation</p>
+            {navLinks.map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-2.5 px-2.5 py-[9px] rounded-md text-[13px] text-[#666] tracking-[0.01em] hover:bg-[#181818] hover:text-[#ccc] transition-colors whitespace-nowrap">
+                {l.icon}{l.label}
+              </Link>
+            ))}
+            <Link href="/admin/tag-cover" onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-[9px] rounded-md text-[13px] tracking-[0.01em] bg-white text-black [&_svg]:stroke-black whitespace-nowrap">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" /></svg>
+              Tag Cover
             </Link>
+          </nav>
+          <div className="px-5 py-4 border-t border-[#1e1e1e] flex-shrink-0 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-[#4ade80] rounded-full flex-shrink-0" />
+            <span className="text-[11px] text-[#444] tracking-[0.04em]">Système opérationnel</span>
+          </div>
+        </aside>
+
+        {/* ── Main ── */}
+        <div className="lg:ml-[220px] min-h-screen flex flex-col">
+
+          {/* Top bar */}
+          <div className="bg-[#0d0d0d] border-b border-[#1a1a1a] px-5 lg:px-10 h-[60px] flex items-center justify-between sticky top-0 z-30 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <button className="lg:hidden flex flex-col justify-center gap-[5px] p-1 cursor-pointer" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Menu">
+                <span className="w-5 h-px bg-[#666] block" /><span className="w-5 h-px bg-[#666] block" /><span className="w-5 h-px bg-[#666] block" />
+              </button>
+              <div className="flex items-center gap-2 text-[12px] text-[#444] tracking-[0.04em]">
+                <span>Admin</span><span className="text-[#2a2a2a]">/</span>
+                {selectedTag ? (
+                  <>
+                    <button onClick={() => { setSelectedTag(null); setPhotos([]); }} className="hover:text-[#ccc] transition-colors cursor-pointer bg-transparent border-none font-dm text-[12px] text-[#444]">Tag Cover</button>
+                    <span className="text-[#2a2a2a]">/</span>
+                    <span className="text-[#ccc] font-medium capitalize">{selectedTag.replaceAll("-", " ")}</span>
+                  </>
+                ) : (
+                  <span className="text-[#ccc] font-medium">Tag Cover</span>
+                )}
+              </div>
+            </div>
+            <span className="text-[11px] text-[#555] tracking-[0.05em] px-3 py-1 border border-[#1e1e1e] rounded-full bg-[#111]">
+              {tags.length} tag{tags.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
-          {/* Étape 1 : Liste des tags */}
-          {!selectedTag && (
-            <>
-              <h2 className="text-lg text-gray-800 font-semibold mb-6">
-                Choisir un tag pour définir son image principale
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {tags.map((t) => (
-                  <button
-                    key={t.tag}
-                    onClick={() => loadPhotosForTag(t.tag)}
-                    className="bg-gray-50 border border-gray-200 hover:border-black rounded-xl p-6 text-center shadow-sm hover:cursor-pointer hover:shadow-md transition-all"
-                  >
-                    <p className="font-medium text-gray-800 capitalize">
-                      {t.tag.replaceAll("-", " ")}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{t.count} photos</p>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          {/* Content */}
+          <div className="px-4 sm:px-6 lg:px-10 py-8 pb-16 w-full max-w-[1100px] mx-auto">
 
-          {/* Étape 2 : Sélection d’une image */}
-          {selectedTag && (
-            <>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-black capitalize">
-                    {selectedTag.replaceAll("-", " ")}
-                  </h2>
-                  <p className="text-gray-500 text-sm">
-                    Choisis une image pour ce tag
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedTag(null);
-                    setPhotos([]);
-                  }}
-                  className="text-sm text-gray-500 hover:text-black transition"
-                >
-                  ← Retour aux tags
-                </button>
+            <h1 className="font-serif-display text-[26px] sm:text-[30px] text-white tracking-[0.01em] leading-tight mb-1">
+              {selectedTag ? <span className="capitalize">{selectedTag.replaceAll("-", " ")}</span> : "Tag Cover"}
+            </h1>
+            <p className="text-[11px] text-[#444] tracking-[0.12em] uppercase mb-8">
+              {selectedTag ? "Sélectionner une image principale" : "Associer une image de couverture à chaque tag"}
+            </p>
+
+            {/* ── Loading ── */}
+            {loading ? (
+              <div className="flex justify-center pt-20">
+                <div className="w-7 h-7 border border-[#1e1e1e] border-t-[#e8e4dc] rounded-full spin-tc" />
               </div>
 
-              {/* Image actuelle */}
-              {currentCover && (
-                <div className="mb-8">
-                  <p className="text-gray-600 text-sm mb-2">
-                    Image principale actuelle :
-                  </p>
-                  <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-gray-200 shadow-sm">
-                    <Image
-                      src={currentCover}
-                      alt="Image principale"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Liste d’images disponibles */}
-              {loadingPhotos ? (
-                <p className="text-center text-gray-500 mt-10">
-                  Chargement des images...
-                </p>
-              ) : photos.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {photos.map((photo) => (
-                    <div
-                      key={photo.id}
-                      onClick={() => setSelectedImage(photo.url)}
-                      className={`relative aspect-[4/3] overflow-hidden rounded-xl border-4 cursor-pointer transition-all duration-200 ${
-                        selectedImage === photo.url
-                          ? "border-black scale-[1.02]"
-                          : "border-transparent hover:border-gray-300"
-                      }`}
-                    >
-                      <Image
-                        src={photo.thumbnailUrl || photo.url}
-                        alt={photo.description || ""}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  ))}
+            /* ── Step 1: tag list ── */
+            ) : !selectedTag ? (
+              tags.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 bg-[#111] border border-dashed border-[#1e1e1e] rounded-lg text-[#333]">
+                  <p className="text-[12px] tracking-[0.08em] uppercase">Aucun tag trouvé</p>
                 </div>
               ) : (
-                <p className="text-center text-gray-400 mt-10">
-                  Aucune image trouvée pour ce tag.
-                </p>
-              )}
-
-              {/* Bouton de sauvegarde */}
-              {photos.length > 0 && (
-                <div className="flex justify-end mt-8">
-                  <button
-                    onClick={handleSave}
-                    disabled={!selectedImage || saving}
-                    className="px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition"
-                  >
-                    {saving
-                      ? "Sauvegarde..."
-                      : "Définir comme image principale"}
-                  </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {tags.map((t) => (
+                    <button
+                      key={t.tag}
+                      onClick={() => loadPhotosForTag(t.tag)}
+                      className="bg-[#111] border border-[#1e1e1e] hover:border-[#e8e4dc] rounded-lg p-5 text-left transition-colors cursor-pointer group"
+                    >
+                      <p className="text-[13px] text-[#e8e4dc] capitalize tracking-[0.02em] mb-1.5 group-hover:text-white transition-colors">
+                        {t.tag.replaceAll("-", " ")}
+                      </p>
+                      <p className="text-[10px] text-[#3e3e3e] tracking-[0.06em] uppercase">{t.count} photo{t.count !== 1 ? "s" : ""}</p>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </>
-          )}
+              )
+
+            /* ── Step 2: image picker ── */
+            ) : (
+              <div>
+                {/* Back button */}
+                <button
+                  onClick={() => { setSelectedTag(null); setPhotos([]); }}
+                  className="flex items-center gap-2 text-[11px] text-[#555] tracking-[0.08em] uppercase mb-6 cursor-pointer bg-transparent border-none font-dm hover:text-[#aaa] transition-colors"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  Tous les tags
+                </button>
+
+                {/* Current cover */}
+                {currentCover && (
+                  <div className="mb-8">
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-[#444] mb-3">Image principale actuelle</p>
+                    <div className="relative aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-[#1e1e1e]">
+                      <Image src={currentCover} alt="Cover actuelle" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                      <span className="absolute bottom-3 left-4 text-[10px] tracking-[0.1em] uppercase text-white/60">Actuelle</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Photo grid */}
+                {loadingPhotos ? (
+                  <div className="flex justify-center py-16">
+                    <div className="w-7 h-7 border border-[#1e1e1e] border-t-[#e8e4dc] rounded-full spin-tc" />
+                  </div>
+                ) : photos.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 bg-[#111] border border-dashed border-[#1e1e1e] rounded-lg text-[#333]">
+                    <p className="text-[12px] tracking-[0.08em] uppercase">Aucune image pour ce tag</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[10px] tracking-[0.2em] uppercase text-[#444] mb-4">{photos.length} image{photos.length !== 1 ? "s" : ""} disponibles</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                      {photos.map((photo) => {
+                        const isSelected = selectedImage === photo.url;
+                        const isCurrent = currentCover === photo.url;
+                        return (
+                          <div
+                            key={photo.id}
+                            onClick={() => setSelectedImage(photo.url)}
+                            className={`relative aspect-square overflow-hidden rounded-md cursor-pointer transition-all duration-150 ${
+                              isSelected
+                                ? "ring-2 ring-[#e8e4dc] ring-offset-1 ring-offset-[#0a0a0a]"
+                                : "ring-1 ring-[#1e1e1e] hover:ring-[#3a3a3a]"
+                            }`}
+                          >
+                            <Image
+                              src={photo.thumbnailUrl || photo.url}
+                              alt={photo.description || ""}
+                              fill
+                              sizes="(max-width:640px) 50vw, (max-width:768px) 33vw, 200px"
+                              className={`object-cover transition-opacity ${isSelected ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+                            />
+                            {/* Selected checkmark */}
+                            {isSelected && (
+                              <div className="absolute top-2 right-2 w-5 h-5 bg-[#e8e4dc] rounded-full flex items-center justify-center">
+                                <svg width="10" height="10" fill="none" stroke="#000" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                              </div>
+                            )}
+                            {/* Current badge */}
+                            {isCurrent && !isSelected && (
+                              <div className="absolute bottom-0 inset-x-0 bg-black/60 py-1 px-2">
+                                <span className="text-[9px] tracking-[0.08em] uppercase text-white/60">Actuelle</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Save button */}
+                    <div className="flex justify-end mt-8 pt-6 border-t border-[#1a1a1a]">
+                      {selectedImage && (
+                        <span className="text-[11px] text-[#555] tracking-[0.04em] mr-auto self-center">
+                          1 image sélectionnée
+                        </span>
+                      )}
+                      <button
+                        onClick={handleSave}
+                        disabled={!selectedImage || saving}
+                        className="flex items-center gap-2 bg-[#e8e4dc] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed text-[#0a0a0a] border-none rounded-md py-3 px-6 text-[11px] font-medium tracking-[0.1em] uppercase cursor-pointer transition-colors font-dm"
+                      >
+                        {saving ? (
+                          <>
+                            <svg className="spin-tc" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Sauvegarde...
+                          </>
+                        ) : (
+                          <>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                            Définir comme image principale
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
