@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
     await updateDoc(ref, { paid: true, paidAt: Timestamp.now() });
 
-    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/portal/${portalId}`;
+    const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://vadimthevelin.com/"}/portal/${portalId}`;
 
     const html = `
 <!doctype html>

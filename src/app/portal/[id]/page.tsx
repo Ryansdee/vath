@@ -9,7 +9,7 @@ import Link from "next/link";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
-  CardElement,
+  PaymentElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
@@ -112,21 +112,32 @@ function PaymentForm({
       const data = await res.json();
       if (!data.clientSecret) throw new Error("No client secret");
 
-      const result = await stripe.confirmCardPayment(data.clientSecret, {
-        payment_method: { card: elements.getElement(CardElement)! },
+      // ✅ Modern Stripe API: confirmPayment with PaymentElement
+      const result = await stripe.confirmPayment({
+        elements,
+        clientSecret: data.clientSecret,
+        redirect: "if_required",
+        confirmParams: {
+          return_url: `${window.location.origin}/portal/${portalId}?checkout=success`,
+        },
       });
 
       if (result.error) {
+        // Show error to customer
         setError(result.error.message || "Payment failed");
+        setLoading(false);
       } else if (result.paymentIntent?.status === "succeeded") {
+        // Payment succeeded without additional action needed
         onPaid();
-      } else {
-        setError("Payment not completed. Please try again.");
+      } else if (result.paymentIntent?.status === "processing") {
+        // Payment is processing - user may see 3D Secure screen or bank app
+        setError("Payment is processing. Please wait...");
       }
+      // Note: If 3D Secure or other authentication is required,
+      // Stripe will redirect to return_url and page will reload
     } catch (error: unknown) {
       if (error instanceof Error) setError(error.message);
       else setError("Une erreur inconnue est survenue.");
-    } finally {
       setLoading(false);
     }
   };
@@ -136,24 +147,14 @@ function PaymentForm({
       <div className="border border-black bg-white">
         <div className="px-4 py-3 border-b border-black">
           <p className="text-[11px] uppercase tracking-[0.25em] text-black">
-            Card details
+            Payment method
           </p>
         </div>
         <div className="p-4">
-          <CardElement
+          <PaymentElement
             options={{
-              style: {
-                base: {
-                  fontFamily:
-                    'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
-                  fontSize: "14px",
-                  color: "#000",
-                  "::placeholder": { color: "#666" },
-                },
-                invalid: { color: "#b91c1c" },
-              },
+              layout: "tabs",
             }}
-            className="py-2"
           />
         </div>
       </div>
@@ -414,7 +415,23 @@ export default function ClientPortalPage() {
             </div>
           </div>
 
-          <Elements stripe={stripePromise}>
+          <Elements
+            stripe={stripePromise}
+            options={{
+              appearance: {
+                theme: "stripe",
+                variables: {
+                  colorPrimary: "#000",
+                  colorText: "#000",
+                  colorBackground: "#fff",
+                  colorDanger: "#b91c1c",
+                  fontFamily:
+                    'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial',
+                  fontSizeBase: "14px",
+                },
+              },
+            }}
+          >
             <PaymentForm
               portalId={portalId}
               amount={portal.price || 0}
