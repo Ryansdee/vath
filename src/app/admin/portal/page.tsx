@@ -28,11 +28,182 @@ interface Portal {
 }
 
 const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
-  .font-serif-display { font-family: 'DM Serif Display', serif; }
-  .font-dm { font-family: 'DM Sans', sans-serif; }
-  @keyframes spin-portal { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  .spin-portal { animation: spin-portal 0.8s linear infinite; }
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Geist:wght@300;400;500&display=swap');
+
+  .p-root * { box-sizing: border-box; }
+  .p-root h1,.p-root h2,.p-root h3,.p-root p { margin:0; padding:0; }
+  .font-serif { font-family: 'Cormorant Garamond', serif; }
+  .font-geist { font-family: 'Geist', sans-serif; }
+
+  @keyframes spin-p { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .spin-p { animation: spin-p 0.8s linear infinite; }
+
+  /* ── Sidebar ── */
+  .p-sidebar {
+    position:fixed; top:0; left:0; height:100%; width:220px;
+    background:#fff; border-right:1px solid #EAE6E1;
+    display:flex; flex-direction:column; z-index:50;
+    transition:transform 0.2s ease;
+  }
+  .p-sidebar.closed { transform:translateX(-100%); }
+  @media(min-width:1024px){ .p-sidebar{ transform:translateX(0)!important; } }
+
+  .p-sidebar-header { padding:28px 22px 20px; border-bottom:1px solid #EAE6E1; flex-shrink:0; }
+  .p-sidebar-logo { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:300; color:#1A1816; letter-spacing:0.04em; line-height:1.2; }
+  .p-sidebar-logo em { font-style:italic; color:#8A7D6E; }
+  .p-sidebar-sub { font-family:'Geist',sans-serif; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:#C8BFB5; margin-top:4px; display:block; }
+
+  .p-nav { flex:1; padding:16px 10px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+  .p-nav-label { font-family:'Geist',sans-serif; font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:#D4CFC9; padding:8px 12px 6px; display:block; }
+  .p-nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:7px; font-family:'Geist',sans-serif; font-size:13px; color:#9E9890; text-decoration:none; transition:all 0.15s; white-space:nowrap; }
+  .p-nav-link:hover { background:#F4F1ED; color:#3D3830; }
+  .p-nav-link.active { background:#1A1816; color:#F9F7F4; }
+  .p-nav-link.active svg { stroke:#F9F7F4; }
+
+  .p-sidebar-footer { padding:16px 22px; border-top:1px solid #EAE6E1; flex-shrink:0; display:flex; align-items:center; gap:8px; }
+  .p-status-dot { width:6px; height:6px; border-radius:50%; background:#5DBF8A; flex-shrink:0; }
+  .p-status-text { font-family:'Geist',sans-serif; font-size:11px; color:#C8BFB5; letter-spacing:0.04em; }
+
+  .p-overlay { position:fixed; inset:0; background:rgba(26,24,22,0.25); z-index:40; backdrop-filter:blur(2px); }
+
+  /* ── Topbar ── */
+  .p-topbar { position:sticky; top:0; z-index:30; height:60px; background:#fff; border-bottom:1px solid #EAE6E1; padding:0 24px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .p-breadcrumb { display:flex; align-items:center; gap:8px; font-family:'Geist',sans-serif; font-size:12px; color:#C8BFB5; letter-spacing:0.04em; }
+  .p-breadcrumb-sep { color:#E2DDD8; }
+  .p-breadcrumb-current { color:#3D3830; font-weight:500; }
+  .p-badge-count { font-family:'Geist',sans-serif; font-size:11px; color:#9E9890; letter-spacing:0.05em; padding:4px 12px; border:1px solid #EAE6E1; border-radius:100px; background:#F9F7F4; }
+  .p-hamburger { display:flex; flex-direction:column; justify-content:center; gap:5px; padding:4px; cursor:pointer; background:none; border:none; }
+  .p-hamburger span { width:18px; height:1px; background:#9E9890; display:block; }
+  @media(min-width:1024px){ .p-hamburger{ display:none; } }
+
+  /* ── Content ── */
+  .p-content { padding:36px 24px 80px; width:100%; }
+  @media(min-width:640px){ .p-content{ padding:40px 32px 80px; } }
+  @media(min-width:1024px){ .p-content{ padding:48px 40px 80px; } }
+
+  .p-page-title { font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:300; color:#1A1816; letter-spacing:-0.01em; line-height:1.1; margin-bottom:6px; }
+  .p-page-title em { font-style:italic; color:#8A7D6E; }
+  .p-page-sub { font-family:'Geist',sans-serif; font-size:11px; color:#C8BFB5; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:36px; }
+
+  /* ── Portal list ── */
+  .p-list-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .p-list-count { font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#C8BFB5; }
+
+  .p-btn-new { display:flex; align-items:center; gap:6px; background:#1A1816; color:#F9F7F4; border:none; border-radius:8px; padding:9px 14px; font-family:'Geist',sans-serif; font-size:11px; font-weight:400; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:background 0.15s; }
+  .p-btn-new:hover { background:#2D2A26; }
+
+  .p-portal-card { background:#fff; border:1.5px solid #EAE6E1; border-radius:10px; overflow:hidden; cursor:pointer; transition:all 0.15s; }
+  .p-portal-card:hover { border-color:#C8BFB5; }
+  .p-portal-card.selected { border-color:#1A1816; }
+
+  .p-portal-card-body { padding:16px 18px; }
+  .p-portal-name { font-family:'Geist',sans-serif; font-size:13px; font-weight:500; color:#1A1816; margin-bottom:2px; }
+  .p-portal-project { font-family:'Geist',sans-serif; font-size:11px; color:#8A7D6E; letter-spacing:0.03em; margin-bottom:2px; }
+  .p-portal-email { font-family:'Geist',sans-serif; font-size:11px; color:#C8BFB5; }
+  .p-portal-badges { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:10px; }
+
+  .p-portal-card-footer { display:flex; border-top:1px solid #EAE6E1; }
+  .p-portal-action { flex:1; padding:10px; font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#9E9890; background:transparent; border:none; cursor:pointer; transition:all 0.15s; }
+  .p-portal-action:hover { background:#F9F7F4; color:#3D3830; }
+  .p-portal-action.danger:hover { background:#FDF5F5; color:#B85050; }
+  .p-portal-action + .p-portal-action { border-left:1px solid #EAE6E1; }
+
+  /* ── Badges ── */
+  .badge { font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.06em; padding:3px 8px; border-radius:4px; border:1px solid; }
+  .badge-files { background:#F9F7F4; color:#9E9890; border-color:#EAE6E1; }
+  .badge-price { background:#F4F1ED; color:#8A7D6E; border-color:#E2DDD8; }
+  .badge-paid { background:rgba(93,191,138,0.1); color:#3D9E6E; border-color:rgba(93,191,138,0.25); }
+  .badge-pending { background:rgba(200,184,154,0.15); color:#8A7D6E; border-color:rgba(200,184,154,0.3); }
+
+  /* ── Empty state ── */
+  .p-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:320px; background:#fff; border:1.5px dashed #EAE6E1; border-radius:12px; color:#C8BFB5; }
+  .p-empty-text { font-family:'Geist',sans-serif; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#D4CFC9; }
+
+  /* ── Detail panel ── */
+  .p-detail-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:#1A1816; margin-bottom:4px; }
+  .p-detail-meta { font-family:'Geist',sans-serif; font-size:12px; color:#9E9890; letter-spacing:0.03em; }
+  .p-detail-sep { color:#D4CFC9; margin:0 8px; }
+
+  /* ── Dropzone ── */
+  .p-dropzone { border:1.5px dashed #DDD9D3; border-radius:8px; padding:36px 20px; text-align:center; cursor:pointer; transition:all 0.15s; outline:none; user-select:none; background:#FAFAF8; margin-bottom:20px; }
+  .p-dropzone:hover, .p-dropzone.uploading-active { border-color:#9E9890; background:#F4F1ED; }
+  .p-dropzone-title { font-family:'Geist',sans-serif; font-size:13px; color:#9E9890; margin-bottom:4px; }
+  .p-dropzone-hint { font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:#C8BFB5; }
+
+  /* ── Progress log ── */
+  .p-progress-log { background:#fff; border:1px solid #EAE6E1; border-radius:8px; padding:14px 18px; margin-bottom:20px; }
+  .p-progress-msg { font-family:'Geist',sans-serif; font-size:11px; letter-spacing:0.04em; padding:2px 0; color:#C8BFB5; }
+  .p-progress-msg.done { color:#5DBF8A; }
+
+  /* ── File grid ── */
+  .p-section-label { font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#C8BFB5; margin-bottom:14px; display:block; }
+  .p-file-card { border:1.5px solid #EAE6E1; border-radius:8px; overflow:hidden; cursor:pointer; background:#F9F7F4; transition:border-color 0.15s; }
+  .p-file-card:hover { border-color:#C8BFB5; }
+  .p-file-name { padding:8px 10px; font-family:'Geist',sans-serif; font-size:10px; color:#9E9890; letter-spacing:0.03em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-top:1px solid #EAE6E1; background:#fff; }
+
+  /* ── Mark paid btn ── */
+  .p-mark-paid { padding:5px 12px; font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; background:transparent; border:1px solid #EAE6E1; border-radius:6px; color:#9E9890; cursor:pointer; transition:all 0.15s; }
+  .p-mark-paid:hover { border-color:#5DBF8A; color:#3D9E6E; }
+
+  /* ── Back button ── */
+  .p-back { display:flex; align-items:center; gap:8px; font-family:'Geist',sans-serif; font-size:11px; color:#9E9890; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:24px; cursor:pointer; background:transparent; border:none; transition:color 0.15s; }
+  .p-back:hover { color:#3D3830; }
+
+  /* ── Modals ── */
+  .p-modal-backdrop { position:fixed; inset:0; background:rgba(26,24,22,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; backdrop-filter:blur(6px); }
+  .p-modal { background:#fff; border:1px solid #EAE6E1; border-radius:12px; width:100%; max-width:480px; overflow:hidden; }
+  .p-modal-header { padding:28px 28px 0; }
+  .p-modal-title { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:300; color:#1A1816; margin-bottom:6px; }
+  .p-modal-sub { font-family:'Geist',sans-serif; font-size:12px; color:#C8BFB5; letter-spacing:0.04em; margin-bottom:24px; }
+  .p-modal-body { padding:0 28px 28px; }
+  .p-modal-body-inner { padding:28px; }
+
+  /* ── Form elements in modal ── */
+  .p-label { font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#C8BFB5; margin-bottom:8px; display:block; }
+  .p-label em { font-style:normal; color:#E2DDD8; }
+  .p-input { width:100%; background:#F9F7F4; border:1.5px solid #EAE6E1; border-radius:8px; padding:12px 16px; color:#1A1816; font-size:13px; font-family:'Geist',sans-serif; font-weight:300; outline:none; transition:border-color 0.15s, box-shadow 0.15s; }
+  .p-input::placeholder { color:#D4CFC9; }
+  .p-input:focus { border-color:#9E9890; background:#fff; box-shadow:0 0 0 3px rgba(158,152,144,0.08); }
+  .p-field { margin-bottom:16px; }
+
+  /* ── Checkbox toggle ── */
+  .p-toggle { display:flex; align-items:center; gap:10px; cursor:pointer; padding:14px 0; border-top:1px solid #EAE6E1; margin-top:4px; }
+  .p-checkbox { width:16px; height:16px; border-radius:4px; border:1.5px solid; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
+  .p-checkbox.on { background:#1A1816; border-color:#1A1816; }
+  .p-checkbox.off { background:#F9F7F4; border-color:#DDD9D3; }
+  .p-toggle-label { font-family:'Geist',sans-serif; font-size:13px; color:#8A7D6E; }
+
+  /* ── Modal buttons ── */
+  .p-modal-actions { display:flex; gap:10px; margin-top:24px; }
+  .p-btn-primary { flex:1; background:#1A1816; color:#F9F7F4; border:none; border-radius:8px; padding:13px 16px; font-family:'Geist',sans-serif; font-size:11px; font-weight:400; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:background 0.15s; }
+  .p-btn-primary:hover { background:#2D2A26; }
+  .p-btn-primary:disabled { opacity:0.35; cursor:not-allowed; }
+  .p-btn-ghost { flex:1; background:transparent; color:#9E9890; border:1.5px solid #EAE6E1; border-radius:8px; padding:13px 16px; font-family:'Geist',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
+  .p-btn-ghost:hover { border-color:#C8BFB5; color:#5C5752; }
+  .p-btn-ghost:disabled { opacity:0.35; cursor:not-allowed; }
+  .p-btn-danger { flex:1; background:transparent; color:#B85050; border:1.5px solid rgba(184,80,80,0.3); border-radius:8px; padding:13px 16px; font-family:'Geist',sans-serif; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; }
+  .p-btn-danger:hover { background:#FDF5F5; border-color:#B85050; }
+  .p-btn-danger:disabled { opacity:0.35; cursor:not-allowed; }
+
+  /* ── File preview modal ── */
+  .p-preview-backdrop { position:fixed; inset:0; background:rgba(26,24,22,0.75); display:flex; align-items:center; justify-content:center; z-index:60; padding:20px; backdrop-filter:blur(8px); }
+  .p-preview-close { position:absolute; top:24px; right:28px; background:none; border:none; color:#9E9890; font-size:28px; cursor:pointer; line-height:1; transition:color 0.15s; }
+  .p-preview-close:hover { color:#1A1816; }
+  .p-preview-meta { font-family:'Geist',sans-serif; font-size:11px; color:#9E9890; letter-spacing:0.08em; text-transform:uppercase; }
+  .p-preview-actions { display:flex; gap:8px; }
+  .p-preview-btn { padding:9px 16px; font-family:'Geist',sans-serif; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; border-radius:7px; cursor:pointer; transition:all 0.15s; }
+  .p-preview-btn-ghost { background:transparent; color:#9E9890; border:1.5px solid #EAE6E1; }
+  .p-preview-btn-ghost:hover { border-color:#C8BFB5; color:#5C5752; }
+  .p-preview-btn-danger { background:transparent; color:#B85050; border:1.5px solid rgba(184,80,80,0.3); }
+  .p-preview-btn-danger:hover { background:#FDF5F5; border-color:#B85050; }
+
+  /* ── Delete warning ── */
+  .p-delete-warn { font-family:'Geist',sans-serif; font-size:12px; color:#B85050; margin-top:8px; }
+  .p-delete-body { font-family:'Geist',sans-serif; font-size:13px; color:#8A7D6E; line-height:1.6; }
+  .p-delete-name { color:#1A1816; font-weight:500; }
+
+  /* ── Loading spinner ── */
+  .p-spinner { width:28px; height:28px; border:1.5px solid #EAE6E1; border-top-color:#1A1816; border-radius:50%; }
 `;
 
 export default function AdminPortalPage() {
@@ -56,7 +227,7 @@ export default function AdminPortalPage() {
   const [portalToDelete, setPortalToDelete] = useState<Portal | null>(null);
   const [deletingPortal, setDeletingPortal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showDetail, setShowDetail] = useState(false); // mobile: show detail panel
+  const [showDetail, setShowDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchPortals(); }, []);
@@ -170,123 +341,99 @@ export default function AdminPortalPage() {
     { href: "/admin/home-image", label: "Page d'accueil", icon: <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
   ];
 
-  /* ── Shared input class ── */
-  const inputCls = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-md px-4 py-[11px] text-[#e8e4dc] text-[13px] font-dm outline-none transition-colors focus:border-[#3a3a3a] placeholder:text-[#333]";
-
-  /* ── Badge helper ── */
-  const Badge = ({ variant, children }: { variant: "files" | "price" | "paid" | "pending"; children: React.ReactNode }) => {
-    const cls = {
-      files: "bg-[#161616] text-[#555] border-[#222]",
-      price: "bg-[#161616] text-[#888] border-[#222]",
-      paid: "bg-[rgba(74,222,128,0.1)] text-[#4ade80] border-[rgba(74,222,128,0.2)]",
-      pending: "bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.2)]",
-    }[variant];
-    return <span className={`text-[10px] tracking-[0.06em] px-2 py-0.5 rounded-[3px] border ${cls}`}>{children}</span>;
-  };
-
-  /* ── Button helpers ── */
-  const btnPrimary = "flex-1 bg-[#e8e4dc] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed text-[#0a0a0a] border-none rounded-md py-3 px-4 text-[11px] font-medium tracking-[0.08em] uppercase cursor-pointer transition-colors font-dm";
-  const btnGhost = "flex-1 bg-transparent hover:border-[#444] hover:text-[#aaa] disabled:opacity-30 disabled:cursor-not-allowed text-[#666] border border-[#222] rounded-md py-3 px-4 text-[11px] tracking-[0.08em] uppercase cursor-pointer transition-colors font-dm";
-  const btnDanger = "flex-1 bg-transparent hover:bg-[rgba(239,68,68,0.08)] hover:border-[#ef4444] disabled:opacity-30 disabled:cursor-not-allowed text-[#ef4444] border border-[rgba(239,68,68,0.3)] rounded-md py-3 px-4 text-[11px] tracking-[0.08em] uppercase cursor-pointer transition-colors font-dm";
+  const Badge = ({ variant, children }: { variant: "files" | "price" | "paid" | "pending"; children: React.ReactNode }) => (
+    <span className={`badge badge-${variant}`}>{children}</span>
+  );
 
   return (
     <>
       <style>{globalStyles}</style>
 
-      <div className="font-dm bg-[#0a0a0a] min-h-screen text-[#e8e4dc]">
+      <div className="p-root font-geist" style={{ background: "#F9F7F4", minHeight: "100vh", color: "#1A1816" }}>
 
-        {/* ── Mobile sidebar overlay ── */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-        )}
+        {/* Mobile overlay */}
+        {sidebarOpen && <div className="p-overlay" onClick={() => setSidebarOpen(false)} />}
 
         {/* ── Sidebar ── */}
-        <aside className={`fixed top-0 left-0 h-full w-[220px] bg-[#111] border-r border-[#1e1e1e] flex flex-col z-50 transition-transform duration-200 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
-          <div className="px-5 pt-7 pb-5 border-b border-[#1e1e1e] flex-shrink-0">
-            <p className="font-serif-display text-[17px] tracking-[0.04em] text-white leading-tight">Vadim Thevelin</p>
-            <span className="text-[9px] tracking-[0.18em] uppercase text-[#444] mt-1 block">Administration</span>
+        <aside className={`p-sidebar${sidebarOpen ? "" : " closed"}`}>
+          <div className="p-sidebar-header">
+            <div className="p-sidebar-logo">Vadim <em>Thevelin</em></div>
+            <span className="p-sidebar-sub">Administration</span>
           </div>
-          <nav className="flex-1 px-2.5 py-4 flex flex-col gap-0.5 overflow-y-auto">
-            <p className="text-[9px] tracking-[0.2em] uppercase text-[#3a3a3a] px-2.5 mt-2 mb-1.5">Navigation</p>
+          <nav className="p-nav">
+            <span className="p-nav-label">Navigation</span>
             {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} onClick={() => setSidebarOpen(false)}
-                className="flex items-center gap-2.5 px-2.5 py-[9px] rounded-md text-[13px] text-[#666] tracking-[0.01em] hover:bg-[#181818] hover:text-[#ccc] transition-colors whitespace-nowrap">
+              <Link key={l.href} href={l.href} onClick={() => setSidebarOpen(false)} className="p-nav-link">
                 {l.icon}{l.label}
               </Link>
             ))}
-            <Link href="/admin/portal" onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-2.5 px-2.5 py-[9px] rounded-md text-[13px] tracking-[0.01em] bg-white text-black [&_svg]:stroke-black whitespace-nowrap">
+            <Link href="/admin/portal" onClick={() => setSidebarOpen(false)} className="p-nav-link active">
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
               Portails
             </Link>
           </nav>
-          <div className="px-5 py-4 border-t border-[#1e1e1e] flex-shrink-0 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-[#4ade80] rounded-full flex-shrink-0" />
-            <span className="text-[11px] text-[#444] tracking-[0.04em]">Système opérationnel</span>
+          <div className="p-sidebar-footer">
+            <span className="p-status-dot" />
+            <span className="p-status-text">Système opérationnel</span>
           </div>
         </aside>
 
         {/* ── Main ── */}
         <div className="lg:ml-[220px] min-h-screen flex flex-col">
 
-          {/* Top bar */}
-          <div className="bg-[#0d0d0d] border-b border-[#1a1a1a] px-5 lg:px-10 h-[60px] flex items-center justify-between sticky top-0 z-30 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <button className="lg:hidden flex flex-col justify-center gap-[5px] p-1 cursor-pointer" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Menu">
-                <span className="w-5 h-px bg-[#666] block" /><span className="w-5 h-px bg-[#666] block" /><span className="w-5 h-px bg-[#666] block" />
+          {/* Topbar */}
+          <div className="p-topbar">
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button className="p-hamburger" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Menu">
+                <span /><span /><span />
               </button>
-              <div className="flex items-center gap-2 text-[12px] text-[#444] tracking-[0.04em]">
-                <span>Admin</span><span className="text-[#2a2a2a]">/</span>
-                <span className="text-[#ccc] font-medium">Portails clients</span>
+              <div className="p-breadcrumb">
+                <span>Admin</span>
+                <span className="p-breadcrumb-sep">/</span>
+                <span className="p-breadcrumb-current">Portails clients</span>
               </div>
             </div>
-            <span className="text-[11px] text-[#555] tracking-[0.05em] px-3 py-1 border border-[#1e1e1e] rounded-full bg-[#111]">
-              {portals.length} portal{portals.length !== 1 ? "s" : ""}
-            </span>
+            <span className="p-badge-count">{portals.length} portal{portals.length !== 1 ? "s" : ""}</span>
           </div>
 
           {/* Content */}
-          <div className="px-4 sm:px-6 lg:px-10 py-8 pb-16 w-full">
-            <h1 className="font-serif-display text-[26px] sm:text-[30px] text-white tracking-[0.01em] leading-tight mb-1">Portails clients</h1>
-            <p className="text-[11px] text-[#444] tracking-[0.12em] uppercase mb-8">Créer · Gérer · Supprimer</p>
+          <div className="p-content">
+            <h1 className="p-page-title">Portails <em>clients</em></h1>
+            <p className="p-page-sub">Créer · Gérer · Supprimer</p>
 
             {loading ? (
-              <div className="flex justify-center pt-20">
-                <div className="w-8 h-8 border border-[#1e1e1e] border-t-[#e8e4dc] rounded-full spin-portal" />
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}>
+                <div className="p-spinner spin-p" />
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
 
                 {/* ── Portal list ── */}
-                <div className={`${showDetail ? "hidden lg:block" : "block"}`}>
-                  <div className="flex items-center justify-between mb-3.5">
-                    <span className="text-[10px] tracking-[0.2em] uppercase text-[#444]">{portals.length} portal{portals.length !== 1 ? "s" : ""}</span>
-                    <button
-                      onClick={() => setShowCreatePortal(true)}
-                      className="flex items-center gap-1.5 bg-[#e8e4dc] hover:bg-white text-[#0a0a0a] border-none rounded-md px-3.5 py-2 text-[11px] font-medium tracking-[0.08em] uppercase cursor-pointer transition-colors font-dm"
-                    >
+                <div className={showDetail ? "hidden lg:block" : "block"}>
+                  <div className="p-list-header">
+                    <span className="p-list-count">{portals.length} portal{portals.length !== 1 ? "s" : ""}</span>
+                    <button className="p-btn-new" onClick={() => setShowCreatePortal(true)}>
                       <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       Nouveau
                     </button>
                   </div>
 
                   {portals.length === 0 ? (
-                    <p className="text-center py-10 text-[12px] tracking-[0.08em] uppercase text-[#333]">Aucun portal</p>
+                    <p style={{ textAlign: "center", padding: "40px 0", fontFamily: "'Geist',sans-serif", fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "#D4CFC9" }}>
+                      Aucun portal
+                    </p>
                   ) : (
-                    <div className="flex flex-col gap-1.5">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {portals.map((portal) => (
                         <div
                           key={portal.id}
-                          className={`bg-[#111] border rounded-[7px] overflow-hidden transition-colors ${selectedPortal?.id === portal.id ? "border-[#e8e4dc]" : "border-[#1e1e1e] hover:border-[#2e2e2e]"}`}
+                          className={`p-portal-card${selectedPortal?.id === portal.id ? " selected" : ""}`}
                         >
-                          <div
-                            className="px-4 py-3.5 cursor-pointer"
-                            onClick={() => { setSelectedPortal(portal); setShowDetail(true); }}
-                          >
-                            <p className="text-[13px] text-[#e8e4dc] mb-0.5">{portal.clientName}</p>
-                            <p className="text-[11px] text-[#666] tracking-[0.03em] mb-0.5">{portal.projectName}</p>
-                            <p className="text-[11px] text-[#3e3e3e]">{portal.clientEmail}</p>
-                            <div className="flex items-center flex-wrap gap-2 mt-2">
+                          <div className="p-portal-card-body" onClick={() => { setSelectedPortal(portal); setShowDetail(true); }}>
+                            <p className="p-portal-name">{portal.clientName}</p>
+                            <p className="p-portal-project">{portal.projectName}</p>
+                            <p className="p-portal-email">{portal.clientEmail}</p>
+                            <div className="p-portal-badges">
                               <Badge variant="files">{portal.files?.length || 0} fichier{(portal.files?.length || 0) !== 1 ? "s" : ""}</Badge>
                               {portal.price && (
                                 <>
@@ -296,13 +443,13 @@ export default function AdminPortalPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex border-t border-[#1a1a1a]">
+                          <div className="p-portal-card-footer">
                             <button
-                              className="flex-1 py-2.5 text-[10px] tracking-[0.1em] uppercase text-[#555] hover:bg-[#181818] hover:text-[#ccc] transition-colors cursor-pointer font-dm bg-transparent border-none"
-                              onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/portal/${portal.id}`); }}
+                              className="p-portal-action"
+                              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/portal/${portal.id}`)}
                             >Copier lien</button>
                             <button
-                              className="flex-1 py-2.5 text-[10px] tracking-[0.1em] uppercase text-[#555] hover:bg-[rgba(239,68,68,0.08)] hover:text-[#ef4444] transition-colors cursor-pointer font-dm bg-transparent border-none border-l border-[#1a1a1a]"
+                              className="p-portal-action danger"
                               onClick={() => { setPortalToDelete(portal); setShowDeletePortalConfirm(true); }}
                             >Supprimer</button>
                           </div>
@@ -315,39 +462,37 @@ export default function AdminPortalPage() {
                 {/* ── Detail panel ── */}
                 <div className={`min-w-0 ${showDetail ? "block" : "hidden lg:block"}`}>
 
-                  {/* Mobile back button */}
                   {showDetail && selectedPortal && (
-                    <button
-                      className="lg:hidden flex items-center gap-2 text-[11px] text-[#555] tracking-[0.08em] uppercase mb-5 cursor-pointer bg-transparent border-none font-dm hover:text-[#aaa] transition-colors"
-                      onClick={() => { setShowDetail(false); setSelectedPortal(null); }}
-                    >
+                    <button className="p-back lg:hidden" onClick={() => { setShowDetail(false); setSelectedPortal(null); }}>
                       <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                       Retour aux portails
                     </button>
                   )}
 
                   {!selectedPortal ? (
-                    <div className="hidden lg:flex flex-col items-center justify-center h-[360px] bg-[#111] border border-dashed border-[#1e1e1e] rounded-lg text-[#333]">
-                      <svg className="w-10 h-10 mb-3.5 stroke-[#2a2a2a]" fill="none" viewBox="0 0 24 24">
+                    <div className="p-empty hidden lg:flex">
+                      <svg style={{ width: 36, height: 36, stroke: "#D4CFC9", marginBottom: 12 }} fill="none" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
-                      <p className="text-[12px] tracking-[0.08em] uppercase">Sélectionnez un portal</p>
+                      <p className="p-empty-text">Sélectionnez un portal</p>
                     </div>
                   ) : (
                     <>
                       {/* Detail header */}
-                      <div className="mb-5">
-                        <h2 className="font-serif-display text-[22px] text-white mb-1">{selectedPortal.projectName}</h2>
-                        <p className="text-[12px] text-[#555] tracking-[0.03em]">
-                          {selectedPortal.clientName} <span className="text-[#3a3a3a] mx-1.5">·</span> {selectedPortal.clientEmail}
+                      <div style={{ marginBottom: 24 }}>
+                        <h2 className="p-detail-title">{selectedPortal.projectName}</h2>
+                        <p className="p-detail-meta">
+                          {selectedPortal.clientName}
+                          <span className="p-detail-sep">·</span>
+                          {selectedPortal.clientEmail}
                         </p>
                         {selectedPortal.price && (
-                          <div className="flex items-center flex-wrap gap-2.5 mt-2.5">
+                          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                             <Badge variant="price">{selectedPortal.price.toFixed(2)} €</Badge>
                             <Badge variant={selectedPortal.paid ? "paid" : "pending"}>{selectedPortal.paid ? "payé" : "en attente"}</Badge>
                             {!selectedPortal.paid && (
                               <button
-                                className="px-3.5 py-1.5 text-[10px] tracking-[0.1em] uppercase bg-transparent border border-[#2a2a2a] rounded text-[#888] hover:border-[#4ade80] hover:text-[#4ade80] transition-colors cursor-pointer font-dm"
+                                className="p-mark-paid"
                                 onClick={async () => {
                                   try {
                                     const res = await fetch("/api/portal/mark-paid", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ portalId: selectedPortal.id }) });
@@ -368,31 +513,30 @@ export default function AdminPortalPage() {
                         onClick={() => !uploading && fileInputRef.current?.click()}
                         role="button" tabIndex={0}
                         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !uploading && fileInputRef.current?.click()}
-                        className={`border border-dashed rounded-lg py-8 px-5 text-center mb-5 outline-none select-none transition-colors ${uploading ? "opacity-50 cursor-not-allowed border-[#222] bg-[#0d0d0d]" : "border-[#222] bg-[#0d0d0d] hover:border-[#3a3a3a] hover:bg-[#111] cursor-pointer"}`}
+                        className={`p-dropzone${uploading ? " uploading-active" : ""}`}
+                        style={{ cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.65 : 1 }}
                       >
                         {uploading ? (
                           <>
-                            <svg className="w-7 h-7 mx-auto mb-2.5 stroke-[#2a2a2a] spin-portal" fill="none" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <p className="text-[12px] text-[#4a4a4a]">Upload en cours...</p>
+                            <div className="p-spinner spin-p" style={{ margin: "0 auto 12px" }} />
+                            <p className="p-dropzone-title">Upload en cours...</p>
                           </>
                         ) : (
                           <>
-                            <svg className="w-7 h-7 mx-auto mb-2.5 stroke-[#2a2a2a] transition-colors" fill="none" viewBox="0 0 24 24">
+                            <svg style={{ width: 28, height: 28, stroke: "#D4CFC9", margin: "0 auto 12px", display: "block" }} fill="none" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                             </svg>
-                            <p className="text-[12px] text-[#4a4a4a] mb-1">Cliquez pour uploader des fichiers</p>
-                            <p className="text-[10px] text-[#2e2e2e] tracking-[0.1em] uppercase">Images · Vidéos · Documents</p>
+                            <p className="p-dropzone-title">Cliquez pour uploader des fichiers</p>
+                            <p className="p-dropzone-hint" style={{ marginTop: 4 }}>Images · Vidéos · Documents</p>
                           </>
                         )}
                       </div>
 
                       {/* Progress log */}
                       {uploadProgress.length > 0 && (
-                        <div className="bg-[#111] border border-[#1e1e1e] rounded-md px-4 py-3.5 mb-5">
+                        <div className="p-progress-log">
                           {uploadProgress.map((msg, i) => (
-                            <p key={i} className={`text-[11px] tracking-[0.04em] py-0.5 ${msg.startsWith("✓") ? "text-[#4ade80]" : "text-[#666]"}`}>{msg}</p>
+                            <p key={i} className={`p-progress-msg${msg.startsWith("✓") ? " done" : ""}`}>{msg}</p>
                           ))}
                         </div>
                       )}
@@ -400,26 +544,22 @@ export default function AdminPortalPage() {
                       {/* Files grid */}
                       {selectedPortal.files?.length > 0 && (
                         <div>
-                          <p className="text-[10px] tracking-[0.2em] uppercase text-[#444] mb-3.5">
+                          <span className="p-section-label">
                             {selectedPortal.files.length} fichier{selectedPortal.files.length !== 1 ? "s" : ""}
-                          </p>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                          </span>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                             {selectedPortal.files.map((file) => (
-                              <div
-                                key={file.id}
-                                className="border border-[#1e1e1e] hover:border-[#3a3a3a] rounded-md overflow-hidden cursor-pointer bg-[#0d0d0d] transition-colors group"
-                                onClick={() => setSelectedFile(file)}
-                              >
+                              <div key={file.id} className="p-file-card" onClick={() => setSelectedFile(file)}>
                                 {file.type === "image" ? (
-                                  <div className="relative aspect-square bg-[#111]">
-                                    <Image src={file.url} alt={file.name} fill sizes="(max-width:640px) 33vw, 200px" style={{ objectFit: "cover" }} className="group-hover:opacity-75 transition-opacity" />
+                                  <div style={{ position: "relative", aspectRatio: "1", background: "#F4F1ED" }}>
+                                    <Image src={file.url} alt={file.name} fill sizes="200px" style={{ objectFit: "cover" }} />
                                   </div>
                                 ) : (
-                                  <div className="aspect-square bg-[#111] flex items-center justify-center text-[28px]">
+                                  <div style={{ aspectRatio: "1", background: "#F4F1ED", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
                                     {file.type === "video" ? "🎥" : "📄"}
                                   </div>
                                 )}
-                                <p className="px-2.5 py-2 text-[10px] text-[#555] tracking-[0.03em] truncate border-t border-[#1a1a1a]">{file.name}</p>
+                                <p className="p-file-name">{file.name}</p>
                               </div>
                             ))}
                           </div>
@@ -436,47 +576,49 @@ export default function AdminPortalPage() {
 
       {/* ── Create Portal Modal ── */}
       {showCreatePortal && (
-        <div className="fixed inset-0 bg-black/88 flex items-center justify-center z-50 p-4 sm:p-6 backdrop-blur-md" onClick={() => setShowCreatePortal(false)}>
-          <div className="bg-[#111] border border-[#252525] rounded-lg w-full max-w-[480px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-0">
-              <h3 className="font-serif-display text-[22px] text-white mb-1">Nouveau portal</h3>
-              <p className="text-[12px] text-[#555] tracking-[0.04em] mb-5">Les informations seront envoyées au client par email</p>
+        <div className="p-modal-backdrop" onClick={() => setShowCreatePortal(false)}>
+          <div className="p-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="p-modal-header">
+              <h3 className="p-modal-title">Nouveau <em style={{ fontStyle: "italic", color: "#8A7D6E" }}>portal</em></h3>
+              <p className="p-modal-sub">Les informations seront envoyées au client par email.</p>
             </div>
-            <div className="px-6 pb-6">
+            <div className="p-modal-body">
               <form onSubmit={handleCreatePortal}>
-                <div className="mb-3.5">
-                  <span className="text-[10px] text-[#444] tracking-[0.15em] uppercase mb-2 block">Nom du client <span className="text-[#2e2e2e]">*</span></span>
-                  <input type="text" value={newPortalName} onChange={(e) => setNewPortalName(e.target.value)} className={inputCls} placeholder="Jean Dupont" required />
+                <div className="p-field">
+                  <span className="p-label">Nom du client <em>*</em></span>
+                  <input type="text" value={newPortalName} onChange={(e) => setNewPortalName(e.target.value)} className="p-input" placeholder="Jean Dupont" required />
                 </div>
-                <div className="mb-3.5">
-                  <span className="text-[10px] text-[#444] tracking-[0.15em] uppercase mb-2 block">Email du client <span className="text-[#2e2e2e]">*</span></span>
-                  <input type="email" value={newPortalEmail} onChange={(e) => setNewPortalEmail(e.target.value)} className={inputCls} placeholder="jean@exemple.com" required />
+                <div className="p-field">
+                  <span className="p-label">Email du client <em>*</em></span>
+                  <input type="email" value={newPortalEmail} onChange={(e) => setNewPortalEmail(e.target.value)} className="p-input" placeholder="jean@exemple.com" required />
                 </div>
-                <div className="mb-3.5">
-                  <span className="text-[10px] text-[#444] tracking-[0.15em] uppercase mb-2 block">Nom du projet <span className="text-[#2e2e2e]">*</span></span>
-                  <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} className={inputCls} placeholder="Shooting Mariage 2024" required />
+                <div className="p-field">
+                  <span className="p-label">Nom du projet <em>*</em></span>
+                  <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} className="p-input" placeholder="Shooting Mariage 2024" required />
                 </div>
 
-                {/* Toggle price */}
                 <div
-                  className="flex items-center gap-2.5 cursor-pointer py-3 border-t border-[#1a1a1a] mt-1"
+                  className="p-toggle"
                   onClick={() => { setEnablePrice(!enablePrice); if (enablePrice) setNewPortalPrice(undefined); }}
                 >
-                  <div className={`w-4 h-4 border rounded-[3px] flex items-center justify-center flex-shrink-0 transition-colors ${enablePrice ? "bg-[#e8e4dc] border-[#e8e4dc]" : "bg-[#0d0d0d] border-[#333]"}`}>
-                    {enablePrice && <svg width="10" height="10" fill="none" stroke="#000" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  <div className={`p-checkbox${enablePrice ? " on" : " off"}`}>
+                    {enablePrice && (
+                      <svg width="9" height="9" fill="none" stroke="#F9F7F4" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                    )}
                   </div>
-                  <span className="text-[12px] text-[#666] tracking-[0.04em]">Ajouter un prix pour ce portal</span>
+                  <span className="p-toggle-label">Ajouter un prix pour ce portal</span>
                 </div>
+
                 {enablePrice && (
-                  <div className="mt-3">
-                    <span className="text-[10px] text-[#444] tracking-[0.15em] uppercase mb-2 block">Prix (€)</span>
-                    <input type="number" min={0} step="0.01" value={newPortalPrice ?? ""} onChange={(e) => setNewPortalPrice(e.target.value ? Number(e.target.value) : undefined)} className={inputCls} placeholder="0.00" />
+                  <div className="p-field" style={{ marginTop: 12 }}>
+                    <span className="p-label">Prix (€)</span>
+                    <input type="number" min={0} step="0.01" value={newPortalPrice ?? ""} onChange={(e) => setNewPortalPrice(e.target.value ? Number(e.target.value) : undefined)} className="p-input" placeholder="0.00" />
                   </div>
                 )}
 
-                <div className="flex gap-2.5 mt-5">
-                  <button type="button" disabled={creating} onClick={() => { setShowCreatePortal(false); setNewPortalName(""); setNewPortalEmail(""); setNewProjectName(""); setEnablePrice(false); setNewPortalPrice(undefined); }} className={btnGhost}>Annuler</button>
-                  <button type="submit" disabled={creating} className={btnPrimary}>{creating ? "Création..." : "Créer le portal"}</button>
+                <div className="p-modal-actions">
+                  <button type="button" disabled={creating} onClick={() => { setShowCreatePortal(false); setNewPortalName(""); setNewPortalEmail(""); setNewProjectName(""); setEnablePrice(false); setNewPortalPrice(undefined); }} className="p-btn-ghost">Annuler</button>
+                  <button type="submit" disabled={creating} className="p-btn-primary">{creating ? "Création..." : "Créer le portal"}</button>
                 </div>
               </form>
             </div>
@@ -486,21 +628,19 @@ export default function AdminPortalPage() {
 
       {/* ── Delete Portal Modal ── */}
       {showDeletePortalConfirm && portalToDelete && (
-        <div className="fixed inset-0 bg-black/88 flex items-center justify-center z-50 p-4 sm:p-6 backdrop-blur-md" onClick={() => { setShowDeletePortalConfirm(false); setPortalToDelete(null); }}>
-          <div className="bg-[#111] border border-[#252525] rounded-lg w-full max-w-[480px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-0">
-              <h3 className="font-serif-display text-[22px] text-white mb-5">Supprimer le portal</h3>
-            </div>
-            <div className="px-6 pb-6">
-              <p className="text-[13px] text-[#888] leading-relaxed">
-                Supprimer le portal de <span className="text-[#e8e4dc]">{portalToDelete.clientName}</span> — <em>{portalToDelete.projectName}</em> ?
+        <div className="p-modal-backdrop" onClick={() => { setShowDeletePortalConfirm(false); setPortalToDelete(null); }}>
+          <div className="p-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="p-modal-body-inner">
+              <h3 className="p-modal-title" style={{ marginBottom: 20 }}>Supprimer le portal</h3>
+              <p className="p-delete-body">
+                Supprimer le portal de <span className="p-delete-name">{portalToDelete.clientName}</span> — <em>{portalToDelete.projectName}</em> ?
               </p>
-              <p className="text-[12px] text-[#ef4444] opacity-70 mt-2">
+              <p className="p-delete-warn">
                 {portalToDelete.files?.length || 0} fichier{(portalToDelete.files?.length || 0) !== 1 ? "s" : ""} seront définitivement supprimés.
               </p>
-              <div className="flex gap-2.5 mt-5">
-                <button disabled={deletingPortal} onClick={() => { setShowDeletePortalConfirm(false); setPortalToDelete(null); }} className={btnGhost}>Annuler</button>
-                <button disabled={deletingPortal} onClick={() => handleDeletePortal(portalToDelete)} className={btnDanger}>{deletingPortal ? "Suppression..." : "Supprimer"}</button>
+              <div className="p-modal-actions">
+                <button disabled={deletingPortal} onClick={() => { setShowDeletePortalConfirm(false); setPortalToDelete(null); }} className="p-btn-ghost">Annuler</button>
+                <button disabled={deletingPortal} onClick={() => handleDeletePortal(portalToDelete)} className="p-btn-danger">{deletingPortal ? "Suppression..." : "Supprimer"}</button>
               </div>
             </div>
           </div>
@@ -509,34 +649,34 @@ export default function AdminPortalPage() {
 
       {/* ── File Preview Modal ── */}
       {selectedFile && (
-        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[60] p-4 sm:p-6 backdrop-blur-lg" onClick={() => setSelectedFile(null)}>
-          <button className="absolute top-6 right-7 bg-none border-none text-[#555] hover:text-[#ccc] text-[28px] cursor-pointer leading-none transition-colors" onClick={() => setSelectedFile(null)}>×</button>
-          <div className="w-full max-w-[1100px]" onClick={(e) => e.stopPropagation()}>
+        <div className="p-preview-backdrop" onClick={() => setSelectedFile(null)}>
+          <button className="p-preview-close" onClick={() => setSelectedFile(null)}>×</button>
+          <div style={{ width: "100%", maxWidth: 1100 }} onClick={(e) => e.stopPropagation()}>
             {selectedFile.type === "image" ? (
-              <div className="relative w-full aspect-video">
+              <div style={{ position: "relative", width: "100%", aspectRatio: "16/9" }}>
                 <Image src={selectedFile.url} alt={selectedFile.name} fill style={{ objectFit: "contain" }} sizes="100vw" />
               </div>
             ) : selectedFile.type === "video" ? (
-              <video src={selectedFile.url} controls className="w-full aspect-video bg-black" />
+              <video src={selectedFile.url} controls style={{ width: "100%", aspectRatio: "16/9", background: "#F4F1ED", borderRadius: 8 }} />
             ) : (
-              <div className="w-full aspect-video bg-[#111] flex flex-col items-center justify-center gap-4 border border-[#1e1e1e] rounded-lg">
-                <span className="text-[56px]">📄</span>
-                <p className="text-[13px] text-[#666]">{selectedFile.name}</p>
+              <div style={{ width: "100%", aspectRatio: "16/9", background: "#fff", border: "1px solid #EAE6E1", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                <span style={{ fontSize: 52 }}>📄</span>
+                <p style={{ fontFamily: "'Geist',sans-serif", fontSize: 13, color: "#9E9890" }}>{selectedFile.name}</p>
                 <a href={selectedFile.url} target="_blank" rel="noopener noreferrer"
-                  className="px-5 py-2 border border-[#2a2a2a] rounded text-[#aaa] text-[11px] tracking-[0.1em] uppercase no-underline hover:border-[#555] hover:text-[#ccc] transition-colors">
+                  style={{ padding: "9px 20px", border: "1.5px solid #EAE6E1", borderRadius: 7, fontFamily: "'Geist',sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9E9890", textDecoration: "none" }}>
                   Télécharger
                 </a>
               </div>
             )}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-5">
-              <p className="text-[11px] text-[#555] tracking-[0.08em] uppercase">{selectedFile.name}</p>
-              <div className="flex gap-2">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20, flexWrap: "wrap", gap: 12 }}>
+              <p className="p-preview-meta">{selectedFile.name}</p>
+              <div className="p-preview-actions">
                 <button
-                  className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase rounded bg-transparent text-[#888] border border-[#2a2a2a] hover:border-[#555] hover:text-[#ccc] transition-colors cursor-pointer font-dm"
+                  className="p-preview-btn p-preview-btn-ghost"
                   onClick={() => { handleRenameFile(selectedFile); setSelectedFile(null); }}
                 >Renommer</button>
                 <button
-                  className="px-4 py-2 text-[10px] tracking-[0.1em] uppercase rounded bg-transparent text-[#ef4444] border border-[rgba(239,68,68,0.3)] hover:bg-[rgba(239,68,68,0.08)] hover:border-[#ef4444] transition-colors cursor-pointer font-dm"
+                  className="p-preview-btn p-preview-btn-danger"
                   onClick={() => { setFileToDelete(selectedFile); setShowDeleteConfirm(true); setSelectedFile(null); }}
                 >Supprimer</button>
               </div>
@@ -547,18 +687,16 @@ export default function AdminPortalPage() {
 
       {/* ── Delete File Modal ── */}
       {showDeleteConfirm && fileToDelete && (
-        <div className="fixed inset-0 bg-black/88 flex items-center justify-center z-50 p-4 sm:p-6 backdrop-blur-md" onClick={() => { setShowDeleteConfirm(false); setFileToDelete(null); }}>
-          <div className="bg-[#111] border border-[#252525] rounded-lg w-full max-w-[480px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-6 pt-6 pb-0">
-              <h3 className="font-serif-display text-[22px] text-white mb-5">Supprimer le fichier</h3>
-            </div>
-            <div className="px-6 pb-6">
-              <p className="text-[13px] text-[#888] leading-relaxed">
-                Supprimer <span className="text-[#e8e4dc]">{fileToDelete.name}</span> ? Cette action est irréversible.
+        <div className="p-modal-backdrop" onClick={() => { setShowDeleteConfirm(false); setFileToDelete(null); }}>
+          <div className="p-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="p-modal-body-inner">
+              <h3 className="p-modal-title" style={{ marginBottom: 20 }}>Supprimer le fichier</h3>
+              <p className="p-delete-body">
+                Supprimer <span className="p-delete-name">{fileToDelete.name}</span> ? Cette action est irréversible.
               </p>
-              <div className="flex gap-2.5 mt-5">
-                <button disabled={deleting} onClick={() => { setShowDeleteConfirm(false); setFileToDelete(null); }} className={btnGhost}>Annuler</button>
-                <button disabled={deleting} onClick={() => handleDeleteFile(fileToDelete)} className={btnDanger}>{deleting ? "Suppression..." : "Supprimer"}</button>
+              <div className="p-modal-actions">
+                <button disabled={deleting} onClick={() => { setShowDeleteConfirm(false); setFileToDelete(null); }} className="p-btn-ghost">Annuler</button>
+                <button disabled={deleting} onClick={() => handleDeleteFile(fileToDelete)} className="p-btn-danger">{deleting ? "Suppression..." : "Supprimer"}</button>
               </div>
             </div>
           </div>
